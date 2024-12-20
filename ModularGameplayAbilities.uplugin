@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "ModularGameplayAbilities",
+	"FriendlyName": "Modular Gameplay Abilities",
 	"Description": "Adds data-driven modular Experience and Data capabilities to the Gameplay Abilities System.",
 	"Category": "Other",
 	"CreatedBy": "Chronicler",

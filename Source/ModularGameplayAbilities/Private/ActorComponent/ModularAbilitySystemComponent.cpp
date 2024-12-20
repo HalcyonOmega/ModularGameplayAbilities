@@ -50,22 +50,14 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 		// Notify all abilities that a new pawn avatar has been set
 		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
 		{
-			if (UModularGameplayAbility* ModularAbilityCDO = CastChecked<UModularGameplayAbility>(AbilitySpec.Ability);
-				ModularAbilityCDO->GetInstancingPolicy() != EGameplayAbilityInstancingPolicy::NonInstanced)
+			for (TArray<UGameplayAbility*> Instances = AbilitySpec.GetAbilityInstances();
+				UGameplayAbility* AbilityInstance : Instances)
 			{
-				for (TArray<UGameplayAbility*> Instances = AbilitySpec.GetAbilityInstances();
-					UGameplayAbility* AbilityInstance : Instances)
+				if (UModularGameplayAbility* ModularAbilityInstance = Cast<UModularGameplayAbility>(AbilityInstance))
 				{
-					if (UModularGameplayAbility* ModularAbilityInstance = Cast<UModularGameplayAbility>(AbilityInstance))
-					{
-						// Ability instances may be missing for replays.
-						ModularAbilityInstance->OnPawnAvatarSet();
-					}
+					// Ability instances may be missing for replays.
+					ModularAbilityInstance->OnPawnAvatarSet();
 				}
-			}
-			else
-			{
-				ModularAbilityCDO->OnPawnAvatarSet();
 			}
 		}
 
@@ -104,36 +96,30 @@ void UModularAbilitySystemComponent::CancelAbilitiesByFunc(TShouldCancelAbilityF
 		{
 			continue;
 		}
-
-		if (UModularGameplayAbility* ModularAbilityCDO = CastChecked<UModularGameplayAbility>(AbilitySpec.Ability);
-			ModularAbilityCDO->GetInstancingPolicy() != EGameplayAbilityInstancingPolicy::NonInstanced)
+		
+		UModularGameplayAbility* ModularAbilityCDO = CastChecked<UModularGameplayAbility>(AbilitySpec.Ability); 
+		if (!ModularAbilityCDO)
 		{
-			// Cancel all the spawned instances, not the CDO.
-			for (TArray<UGameplayAbility*> Instances = AbilitySpec.GetAbilityInstances();
-				UGameplayAbility* AbilityInstance : Instances)
-			{
-				if (UModularGameplayAbility* ModularAbilityInstance = CastChecked<UModularGameplayAbility>(AbilityInstance);
-					ShouldCancelFunc(ModularAbilityInstance, AbilitySpec.Handle))
-				{
-					if (ModularAbilityInstance->CanBeCanceled())
-					{
-						ModularAbilityInstance->CancelAbility(AbilitySpec.Handle, AbilityActorInfo.Get(), ModularAbilityInstance->GetCurrentActivationInfo(), bReplicateCancelAbility);
-					}
-					else
-					{
-						UE_LOG(LogModularGameplayAbilities, Error, TEXT("CancelAbilitiesByFunc: Can't cancel ability [%s] because CanBeCanceled is false."), *ModularAbilityInstance->GetName());
-					}
-				}
-			}
+			UE_LOG(LogModularGameplayAbilities, Error, TEXT("CancelAbilitiesByFunc: Non-ModularGameplayAbility %s was Granted to ASC. Skipping."), *AbilitySpec.Ability.GetName());
+			continue;
 		}
-		else
+
+		// Cancel all the spawned instances.
+		TArray<UGameplayAbility*> Instances = AbilitySpec.GetAbilityInstances();
+		for (UGameplayAbility* AbilityInstance : Instances)
 		{
-			// Cancel the non-instanced ability CDO.
-			if (ShouldCancelFunc(ModularAbilityCDO, AbilitySpec.Handle))
+			UModularGameplayAbility* ModularAbilityInstance = CastChecked<UModularGameplayAbility>(AbilityInstance);
+			
+			if (ShouldCancelFunc(ModularAbilityInstance, AbilitySpec.Handle))
 			{
-				// Non-instanced abilities can always be canceled.
-				check(ModularAbilityCDO->CanBeCanceled());
-				ModularAbilityCDO->CancelAbility(AbilitySpec.Handle, AbilityActorInfo.Get(), FGameplayAbilityActivationInfo(), bReplicateCancelAbility);
+				if (ModularAbilityInstance->CanBeCanceled())
+				{
+					ModularAbilityInstance->CancelAbility(AbilitySpec.Handle, AbilityActorInfo.Get(), ModularAbilityInstance->GetCurrentActivationInfo(), bReplicateCancelAbility);
+				}
+				else
+				{
+					UE_LOG(LogModularGameplayAbilities, Error, TEXT("CancelAbilitiesByFunc: Can't cancel ability [%s] because CanBeCanceled is false."), *ModularAbilityInstance->GetName());
+				}
 			}
 		}
 	}
@@ -161,7 +147,7 @@ void UModularAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpe
 	{
 		// Invoke the InputPressed event. This is not replicated here.
 		// If someone is listening, they may replicate the InputPressed event to the server.
-		InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec.Handle, Spec.ActivationInfo.GetActivationPredictionKey());
+		InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec.Handle, Spec.GetPrimaryInstance()->GetCurrentActivationInfo().GetActivationPredictionKey());
 	}
 }
 
@@ -175,7 +161,7 @@ void UModularAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySp
 	{
 		// Invoke the InputReleased event. This is not replicated here.
 		// If someone is listening, they may replicate the InputReleased event to the server.
-		InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, Spec.ActivationInfo.GetActivationPredictionKey());
+		InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, Spec.GetPrimaryInstance()->GetCurrentActivationInfo().GetActivationPredictionKey());
 	}
 }
 
@@ -185,7 +171,7 @@ void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& 
 	{
 		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
 		{
-			if (AbilitySpec.Ability && (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag)))
+			if (AbilitySpec.Ability && (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag)))
 			{
 				InputPressedSpecHandles.AddUnique(AbilitySpec.Handle);
 				InputHeldSpecHandles.AddUnique(AbilitySpec.Handle);
@@ -200,7 +186,7 @@ void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag&
 	{
 		for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
 		{
-			if (AbilitySpec.Ability && (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag)))
+			if (AbilitySpec.Ability && (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag)))
 			{
 				InputReleasedSpecHandles.AddUnique(AbilitySpec.Handle);
 				InputHeldSpecHandles.Remove(AbilitySpec.Handle);
