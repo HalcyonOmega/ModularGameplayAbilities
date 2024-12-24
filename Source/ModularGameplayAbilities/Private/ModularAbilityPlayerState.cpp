@@ -2,6 +2,7 @@
 
 #include "ActorComponent/ModularAbilitySystemComponent.h"
 #include "GameplayTagStack.h"
+#include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilityPlayerState)
 
@@ -10,14 +11,10 @@ AModularAbilityPlayerState::AModularAbilityPlayerState(const FObjectInitializer&
 {
 }
 
-UModularAbilitySystemComponent* AModularAbilityPlayerState::GetAbilitySystemComponent() const
-{
-	return GetModularAbilitySystemComponent();
-}
-
 void AModularAbilityPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ThisClass, StatTags);
 }
 
 void AModularAbilityPlayerState::AddStatTagStack(FGameplayTag Tag, int32 StackCount)
