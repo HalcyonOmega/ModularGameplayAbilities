@@ -9,6 +9,26 @@
 AModularAbilityPlayerState::AModularAbilityPlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	ModularAbilitySystemComponent = ObjectInitializer.CreateDefaultSubobject<UModularAbilitySystemComponent>(this, TEXT("ModularAbilitySystemComponent"));
+	ModularAbilitySystemComponent->SetIsReplicated(true);
+	ModularAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	
+	// AbilitySystemComponent needs to be updated at a high frequency.
+	SetNetUpdateFrequency(100.0f);
+}
+
+void AModularAbilityPlayerState::PreInitializeComponents()
+{
+	Super::PreInitializeComponents();
+}
+
+void AModularAbilityPlayerState::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	
+	check(ModularAbilitySystemComponent);
+	ModularAbilitySystemComponent->InitAbilityActorInfo(this, GetPawn());
+
 }
 
 void AModularAbilityPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const

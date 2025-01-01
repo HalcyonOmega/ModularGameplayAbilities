@@ -13,7 +13,7 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilitySystemComponent)
 
-UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_AbilityInputBlocked, "Gameplay.AbilityInputBlocked");
+UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_Ability_Input_Blocked, "Gameplay.Ability.Input.Blocked");
 
 UModularAbilitySystemComponent::UModularAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -23,6 +23,19 @@ UModularAbilitySystemComponent::UModularAbilitySystemComponent(const FObjectInit
 	InputHeldSpecHandles.Reset();
 
 	FMemory::Memset(ActivationGroupCounts, 0, sizeof(ActivationGroupCounts));
+}
+
+void UModularAbilitySystemComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	AbilityActivatedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::OnAbilityActivatedCallback);
+	AbilityFailedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::OnAbilityFailedCallback);
+	AbilityEndedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::OnAbilityEndedCallback);
+
+	// Grant startup effects on begin play instead of from within InitAbilityActorInfo to avoid
+	// "ticking" periodic effects when BP is first opened
+	GrantStartupEffects();
 }
 
 void UModularAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -72,7 +85,25 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 		{
 			ModularAnimInst->InitializeWithAbilitySystem(this);
 		}
-
+		
+		// For PlayerState client pawns, setup and update owner on companion components if pawns have them
+		/* @TODO: UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(InAvatarActor);
+		if (CoreComponent)
+		{
+			CoreComponent->SetupOwner();
+			CoreComponent->RegisterAbilitySystemDelegates(this);
+			CoreComponent->SetStartupAbilitiesGranted(true);
+		}*/
+		
+		/* Broadcast to Blueprint InitAbilityActorInfo was called
+		 *
+		 * This will happen multiple times for both client / server */
+		OnInitAbilityActorInfo.Broadcast();
+		/* @TODO: if (CoreComponent)
+		{
+			CoreComponent->OnInitAbilityActorInfo.Broadcast();
+		}*/
+		
 		TryActivateAbilitiesOnSpawn();
 	}
 }
@@ -82,8 +113,10 @@ void UModularAbilitySystemComponent::TryActivateAbilitiesOnSpawn()
 	ABILITYLIST_SCOPE_LOCK();
 	for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
 	{
-		const UModularGameplayAbility* ModularAbilityCDO = CastChecked<UModularGameplayAbility>(AbilitySpec.Ability);
-		ModularAbilityCDO->TryActivateAbilityOnSpawn(AbilityActorInfo.Get(), AbilitySpec);
+		if (const UModularGameplayAbility* ModularAbilityCDO = CastChecked<UModularGameplayAbility>(AbilitySpec.Ability))
+		{
+			ModularAbilityCDO->TryActivateAbilityOnSpawn(AbilityActorInfo.Get(), AbilitySpec);
+		}
 	}
 }
 
@@ -197,7 +230,7 @@ void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag&
 
 void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGamePaused)
 {
-	if (HasMatchingGameplayTag(TAG_Gameplay_AbilityInputBlocked))
+	if (HasMatchingGameplayTag(TAG_Gameplay_Ability_Input_Blocked))
 	{
 		ClearAbilityInput();
 		return;
@@ -227,9 +260,7 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 		}
 	}
 
-	//
-	// Process all abilities that had their input pressed this frame.
-	//
+	//Process all abilities that had their input pressed this frame.
 	for (const FGameplayAbilitySpecHandle& SpecHandle : InputPressedSpecHandles)
 	{
 		if (FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle))
@@ -303,14 +334,11 @@ void UModularAbilitySystemComponent::ClearAbilityInput()
 void UModularAbilitySystemComponent::NotifyAbilityActivated(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability)
 {
 	Super::NotifyAbilityActivated(Handle, Ability);
-
-	UModularGameplayAbility* ModularAbility = Cast<UModularGameplayAbility>(Ability);
-	if (!ModularAbility)
+	
+	if (UModularGameplayAbility* ModularAbility = Cast<UModularGameplayAbility>(Ability))
 	{
-		return;
+		AddAbilityToActivationGroup(ModularAbility->GetActivationGroup(), ModularAbility);
 	}
-
-	AddAbilityToActivationGroup(ModularAbility->GetActivationGroup(), ModularAbility);
 }
 
 void UModularAbilitySystemComponent::NotifyAbilityFailed(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason)
@@ -369,6 +397,80 @@ void UModularAbilitySystemComponent::GetAdditionalActivationTagRequirements(cons
 	}
 }
 
+void UModularAbilitySystemComponent::OnAbilityActivatedCallback(UGameplayAbility* Ability)
+{
+	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityActivatedCallback %s"), *Ability->GetName());
+	const AActor* Avatar = GetAvatarActor();
+	if (!Avatar)
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("UModularAbilitySystemComponent::OnAbilityActivated No OwnerActor for this ability: %s"), *Ability->GetName());
+		return;
+	}
+
+	/* @TODO:
+	const UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(Avatar);
+	if (CoreComponent)
+	{
+		CoreComponent->OnAbilityActivated.Broadcast(Ability);
+		
+	}
+	*/
+	OnAbilityActivated.Broadcast(Ability);
+}
+
+void UModularAbilitySystemComponent::OnAbilityFailedCallback(const UGameplayAbility* Ability, const FGameplayTagContainer& Tags)
+{
+	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityFailedCallback %s"), *Ability->GetName());
+
+	const AActor* Avatar = GetAvatarActor();
+	if (!Avatar)
+	{
+		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityFailed No OwnerActor for this ability: %s Tags: %s"), *Ability->GetName(), *Tags.ToString());
+		return;
+	}
+
+	OnAbilityFailed.Broadcast(Ability, Tags);
+	/* @TODO: 
+	const UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(Avatar);
+	UGSCAbilityQueueComponent* AbilityQueueComponent = UGSCBlueprintFunctionLibrary::GetAbilityQueueComponent(Avatar);
+	if (CoreComponent)
+	{
+		CoreComponent->OnAbilityFailed.Broadcast(Ability, Tags);
+	}
+
+	if (AbilityQueueComponent)
+	{
+		AbilityQueueComponent->OnAbilityFailed(Ability, Tags);
+	}
+	*/
+}
+
+void UModularAbilitySystemComponent::OnAbilityEndedCallback(UGameplayAbility* Ability)
+{
+	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback %s"), *Ability->GetName());
+	const AActor* Avatar = GetAvatarActor();
+	if (!Avatar)
+	{
+		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback No OwnerActor for this ability: %s"), *Ability->GetName());
+		return;
+	}
+
+	OnAbilityEnded.Broadcast(Ability);
+	/*
+	const UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(Avatar);
+	UGSCAbilityQueueComponent* AbilityQueueComponent = UGSCBlueprintFunctionLibrary::GetAbilityQueueComponent(Avatar);
+	if (CoreComponent)
+	{
+		CoreComponent->OnAbilityEnded.Broadcast(Ability);
+	}
+
+	if (AbilityQueueComponent)
+	{
+		AbilityQueueComponent->OnAbilityEnded(Ability);
+	}
+	*/
+}
+
 void UModularAbilitySystemComponent::SetTagRelationshipMapping(UModularAbilityTagRelationshipMapping* NewMapping)
 {
 	TagRelationshipMapping = NewMapping;
@@ -381,7 +483,7 @@ void UModularAbilitySystemComponent::ClientNotifyAbilityFailed_Implementation(co
 
 void UModularAbilitySystemComponent::HandleAbilityFailed(const UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason)
 {
-	//UE_LOG(LogModularGameplayAbilities, Warning, TEXT("Ability %s failed to activate (tags: %s)"), *GetPathNameSafe(Ability), *FailureReason.ToString());
+	UE_LOG(LogModularGameplayAbilities, Warning, TEXT("Ability %s failed to activate (tags: %s)"), *GetPathNameSafe(Ability), *FailureReason.ToString());
 
 	if (const UModularGameplayAbility* ModularAbility = Cast<const UModularGameplayAbility>(Ability))
 	{
@@ -509,5 +611,44 @@ void UModularAbilitySystemComponent::GetAbilityTargetData(const FGameplayAbility
 		ReplicatedData.IsValid())
 	{
 		OutTargetDataHandle = ReplicatedData->TargetData;
+	}
+}
+
+int32 UModularAbilitySystemComponent::GetActiveGameplayEffectLevel(FActiveGameplayEffectHandle ActiveHandle)
+{
+	const FActiveGameplayEffect* ActiveEffect = GetActiveGameplayEffect(ActiveHandle);
+	if (ActiveEffect)
+	{
+		return int32(ActiveEffect->Spec.GetLevel());
+	}
+	return int32(-1);
+}
+
+void UModularAbilitySystemComponent::GrantStartupEffects()
+{
+	if (!IsOwnerActorAuthoritative())
+	{
+		return;
+	}
+
+	// Reset/Remove effects if we had already added them
+	for (const FActiveGameplayEffectHandle AddedEffect : AddedEffects)
+	{
+		RemoveActiveGameplayEffect(AddedEffect);
+	}
+
+	FGameplayEffectContextHandle EffectContext = MakeEffectContext();
+	EffectContext.AddSourceObject(this);
+
+	AddedEffects.Empty(GrantedEffects.Num());
+
+	for (const TSubclassOf<UGameplayEffect>& GameplayEffect : GrantedEffects)
+	{
+		FGameplayEffectSpecHandle NewHandle = MakeOutgoingSpec(GameplayEffect, 1, EffectContext);
+		if (NewHandle.IsValid())
+		{
+			FActiveGameplayEffectHandle EffectHandle = ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), this);
+			AddedEffects.Add(EffectHandle);
+		}
 	}
 }

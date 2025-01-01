@@ -15,6 +15,11 @@ class MODULARGAMEPLAYABILITIES_API AModularAbilityPlayerState : public AModularP
 public:
 	AModularAbilityPlayerState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	//~AActor interface
+	virtual void PreInitializeComponents() override;
+	virtual void PostInitializeComponents() override;
+	//~End of AActor interface
+	
 	UFUNCTION(BlueprintCallable, Category = "ModularAbility|PlayerState")
 	UModularAbilitySystemComponent* GetModularAbilitySystemComponent() const { return ModularAbilitySystemComponent; }
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return ModularAbilitySystemComponent; };

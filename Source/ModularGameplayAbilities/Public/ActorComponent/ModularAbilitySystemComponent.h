@@ -2,14 +2,25 @@
 
 #pragma once
 
+#include "GameplayAbilities/ModularGameplayAbility.h"
 #include "AbilitySystemComponent.h"
 #include "NativeGameplayTags.h"
-#include "GameplayAbilities/ModularAbilityTagRelationshipMapping.h"
-#include "GameplayAbilities/ModularGameplayAbility.h"
 
 #include "ModularAbilitySystemComponent.generated.h"
 
-MODULARGAMEPLAYABILITIES_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Gameplay_AbilityInputBlocked);
+class AActor;
+class UGameplayAbility;
+class UModularAbilityTagRelationshipMapping;
+class UObject;
+struct FFrame;
+struct FGameplayAbilityTargetDataHandle;
+
+MODULARGAMEPLAYABILITIES_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Gameplay_Ability_Input_Blocked);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FModularOnInitAbilityActorInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FModularOnAbilityActivated, const UGameplayAbility*, Ability);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FModularOnAbilityEnded, const UGameplayAbility*, Ability);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FModularOnAbilityFailed, const UGameplayAbility*, Ability, const FGameplayTagContainer&, ReasonTags);
 
 /**
  * Gameplay Feature System component extending the Gameplay Ability System Component with Enhanced Input.
@@ -23,7 +34,7 @@ MODULARGAMEPLAYABILITIES_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Gameplay_Ability
  *
  * @todo Refactor the parent class's tag management into a separate component.
  */
-UCLASS(ClassGroup=AbilitySystem, hidecategories=(Object,LOD,Lighting,Transform,Sockets,TextureStreaming), editinlinenew, meta=(BlueprintSpawnableComponent))
+UCLASS(BlueprintType, Blueprintable, ClassGroup=AbilitySystem, HideCategories=(Object,LOD,Lighting,Transform,Sockets,TextureStreaming), EditInlineNew, meta=(BlueprintSpawnableComponent))
 class MODULARGAMEPLAYABILITIES_API UModularAbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
@@ -33,6 +44,7 @@ public:
 	UModularAbilitySystemComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	//~UActorComponent interface
+	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	//~End of UActorComponent interface
 
@@ -69,6 +81,47 @@ public:
 	/** Looks at ability tags and gathers additional required and blocking tags */
 	void GetAdditionalActivationTagRequirements(const FGameplayTagContainer& AbilityTags, FGameplayTagContainer& OutActivationRequired, FGameplayTagContainer& OutActivationBlocked) const;
 
+	UFUNCTION(BlueprintCallable)
+	int32 GetActiveGameplayEffectLevel(FActiveGameplayEffectHandle ActiveHandle);
+
+	/**
+	 * Event called just after InitAbilityActorInfo, once abilities and attributes have been granted.
+	 *
+	 * This will happen multiple times for both client / server:
+	 *
+	 * - Once for Server after component initialization
+	 * - Once for Server after replication of owning actor (Possessed by for Player State)
+	 * - Once for Client after component initialization
+	 * - Once for Client after replication of owning actor (Once more for Player State OnRep_PlayerState)
+	 *
+	 * Also depends on whether ASC lives on Pawns or Player States.
+	 */
+	UPROPERTY(BlueprintAssignable, Category="Abilities")
+	FModularOnInitAbilityActorInfo OnInitAbilityActorInfo;
+
+	
+	/* Called when an ability is activated for the owner actor. */
+	UPROPERTY(BlueprintAssignable, Category = "Ability")
+	FModularOnAbilityActivated OnAbilityActivated;
+
+	/* Called when an ability is ended for the owner actor. */
+	UPROPERTY(BlueprintAssignable, Category = "Ability")
+	FModularOnAbilityEnded OnAbilityEnded;
+
+	/* Called when an ability failed to activated for the owner actor, passes along the failed ability
+	* and a tag explaining why. */
+	UPROPERTY(BlueprintAssignable, Category = "Ability")
+	FModularOnAbilityFailed OnAbilityFailed;
+	
+	//~ Those are Delegate Callbacks register with this ASC to trigger corresponding events on the Owning Character (mainly for ability queuing)
+	virtual void OnAbilityActivatedCallback(UGameplayAbility* Ability);
+	virtual void OnAbilityFailedCallback(const UGameplayAbility* Ability, const FGameplayTagContainer& Tags);
+	virtual void OnAbilityEndedCallback(UGameplayAbility* Ability);
+	
+	/** List of GameplayEffects to apply when the Ability System Component is initialized (typically on begin play) */
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	TArray<TSubclassOf<UGameplayEffect>> GrantedEffects;
+	
 protected:
 
 	void TryActivateAbilitiesOnSpawn();
@@ -121,4 +174,11 @@ protected:
 
 	// Number of abilities running in each activation group.
 	int32 ActivationGroupCounts[static_cast<uint8>(EModularAbilityActivationGroup::MAX)];
+	
+	// Cached applied Startup Effects
+	UPROPERTY(transient)
+	TArray<FActiveGameplayEffectHandle> AddedEffects;
+	
+	/** Called when Ability System Component is initialized */
+	void GrantStartupEffects();
 };

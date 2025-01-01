@@ -54,9 +54,13 @@ struct FModularAbilityMontageFailureMessage
 	GENERATED_BODY()
 
 public:
-
+	// Player controller that failed to activate the ability, if the AbilitySystemComponent was player owned
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<APlayerController> PlayerController = nullptr;
+
+	// Avatar actor that failed to activate the ability
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<AActor> AvatarActor = nullptr;
 
 	// All the reasons why this ability has failed
 	UPROPERTY(BlueprintReadWrite)
@@ -69,12 +73,12 @@ public:
 /**
  * Extends the GameplayAbility class with grouping, activation policies, and utility functions.
  */
-UCLASS(Abstract, HideCategories=("Input"), Meta=(ShortTooltip="Extends the GameplayAbility class with grouping, activation policies, and utility functions."))
+UCLASS(Abstract, Blueprintable, HideCategories=("Input"), Meta=(ShortTooltip="Extends the GameplayAbility class with grouping, activation policies, and utility functions."))
 class MODULARGAMEPLAYABILITIES_API UModularGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
 
-	/** @todo This is an anti-pattern, replace with a design that does not need friend access. */
+	/** @TODO: This is an anti-pattern, replace with a design that does not need friend access. */
 	friend class UModularAbilitySystemComponent;
 
 public:
@@ -160,7 +164,7 @@ protected:
 		const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo) const override;
 	/**
-	 * @todo Lyra implements a GameplayEffectContext that adds an AbilitySourceObject for tracking. Do we need that?
+	 * @TODO: Lyra implements a GameplayEffectContext that adds an AbilitySourceObject for tracking. Do we need that?
 	 */
 	virtual FGameplayEffectContextHandle MakeEffectContext(
 		const FGameplayAbilitySpecHandle Handle,

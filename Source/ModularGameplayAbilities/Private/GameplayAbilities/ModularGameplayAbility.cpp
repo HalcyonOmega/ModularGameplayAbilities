@@ -118,6 +118,7 @@ void UModularGameplayAbility::NativeOnAbilityFailedToActivate(const FGameplayTag
 		{
 			FModularAbilityMontageFailureMessage Message;
 			Message.PlayerController = GetActorInfo().PlayerController.Get();
+			Message.AvatarActor = GetActorInfo().AvatarActor.Get();
 			Message.FailureTags = FailedReason;
 			Message.FailureMontage = pMontage;
 
@@ -273,6 +274,9 @@ FGameplayEffectContextHandle UModularGameplayAbility::MakeEffectContext(const FG
 {
 	FGameplayEffectContextHandle ContextHandle = Super::MakeEffectContext(Handle, ActorInfo);
 
+	// @TODO: Relook Original Lyra code in line below vs implemented code
+	// FModularGameplayEffectContext* EffectContext = FModularGameplayEffectContext::ExtractEffectContext(ContextHandle);
+	
 	FGameplayEffectContext* EffectContext = nullptr;
 	if (FGameplayEffectContext* BaseEffectContext = ContextHandle.Get();
 		(BaseEffectContext != nullptr)
@@ -304,7 +308,16 @@ void UModularGameplayAbility::ApplyAbilityTagsToGameplayEffectSpec(FGameplayEffe
 {
 	Super::ApplyAbilityTagsToGameplayEffectSpec(Spec, AbilitySpec);
 
-	// @todo Lyra applies ability tags based on the gameplay tags of the hit material, do we need that?
+	// @TODO: Lyra applies ability tags based on the gameplay tags of the hit material, do we need that?
+	/*
+	if (const FHitResult* HitResult = Spec.GetContext().GetHitResult())
+	{
+		if (const UPhysicalMaterialWithTags* PhysMatWithTags = Cast<const UPhysicalMaterialWithTags>(HitResult->PhysMaterial.Get()))
+		{
+			Spec.CapturedTargetTags.GetSpecTags().AppendTags(PhysMatWithTags->Tags);
+		}
+	}
+	*/
 }
 
 bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(const UAbilitySystemComponent& AbilitySystemComponent, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const
