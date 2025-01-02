@@ -9,6 +9,7 @@
 #include "GameplayAbilities/ModularGameplayAbility.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
+#include "GameplayAbilities/ModularAbilityTagRelationshipMapping.h"
 #include "GameplayAbilities/ModularGlobalAbilitySystem.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilitySystemComponent)
@@ -99,10 +100,6 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 		 *
 		 * This will happen multiple times for both client / server */
 		OnInitAbilityActorInfo.Broadcast();
-		/* @TODO: if (CoreComponent)
-		{
-			CoreComponent->OnInitAbilityActorInfo.Broadcast();
-		}*/
 		
 		TryActivateAbilitiesOnSpawn();
 	}

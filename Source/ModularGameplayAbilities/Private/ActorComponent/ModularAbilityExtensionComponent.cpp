@@ -73,6 +73,15 @@ void UModularAbilityExtensionComponent::InitializeAbilitySystem(UModularAbilityS
 		ensure(PawnData))
 	{
 		InASC->SetTagRelationshipMapping(PawnData->GetTagRelationshipMapping());
+		
+		for (const UModularAbilitySet* AbilitySet : PawnData->GetAbilitySet())
+		{
+			if (AbilitySet)
+			{
+				FModularAbilitySet_GrantedHandles Handles;
+				AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, &Handles, nullptr);
+			}
+		}
 	}
 
 	OnAbilitySystemInitialized.Broadcast();
@@ -206,6 +215,7 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 	if (CurrentState == ModularGameplayTags::InitState_Spawned
 		&& DesiredState == ModularGameplayTags::InitState_DataAvailable)
 	{
+		/* @TODO: Relook architecture. Commented code below to use alternate pawn-driven architecture for use with AI Controllers
 		// The player state is required.
 		if (!GetPlayerState<AModularPlayerState>())
 		{
@@ -242,14 +252,42 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 		}
 
 		return true;
+		*/
+		
+		// Pawn data is required.
+		const UModularPawnComponent* ModularPawnComponent = Pawn->GetComponentByClass<UModularPawnComponent>();
+		const IAbilityPawnDataInterface* PawnData = ModularPawnComponent->GetPawnData<IAbilityPawnDataInterface>();
+		if (!PawnData)
+		{
+			return false;
+		}
+
+		const bool bHasAuthority = Pawn->HasAuthority();
+		const bool bIsLocallyControlled = Pawn->IsLocallyControlled();
+
+		if (bHasAuthority || bIsLocallyControlled)
+		{
+			// Check for being possessed by a controller.
+			if (!GetController<AController>())
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 	else if (CurrentState == ModularGameplayTags::InitState_DataAvailable
 		&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
 	{
+		/* @TODO: Relook architecture. Same as above.
 		// Wait for player state ASC and extension component.
 		const IAbilitySystemInterface* ModularPS = Cast<IAbilitySystemInterface>(GetPlayerState<AModularPlayerState>());
 
 		return ModularPS->GetAbilitySystemComponent() && Manager->HasFeatureReachedInitState(Pawn, UModularPawnComponent::NAME_ActorFeatureName, ModularGameplayTags::InitState_DataInitialized);
+		*/
+			
+		// Transition to initialize if all features have their data available
+		return Manager->HaveAllFeaturesReachedInitState(Pawn, ModularGameplayTags::InitState_DataAvailable);
 	}
 	else if (CurrentState == ModularGameplayTags::InitState_DataInitialized
 		&& DesiredState == ModularGameplayTags::InitState_GameplayReady)
@@ -265,6 +303,7 @@ void UModularAbilityExtensionComponent::HandleChangeInitState(UGameFrameworkComp
 	const FGameplayTag CurrentState,
 	const FGameplayTag DesiredState)
 {
+	/*
 	if (CurrentState == ModularGameplayTags::InitState_DataAvailable
 		&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
 	{
@@ -276,9 +315,32 @@ void UModularAbilityExtensionComponent::HandleChangeInitState(UGameFrameworkComp
 		{
 			return;
 		}
+		
 		// The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
 		// The ability system component and attribute sets live on the player state.
 		InitializeAbilitySystem(Cast<UModularAbilitySystemComponent>(ModularASC), ModularPS);
+		
+		if (Pawn->InputComponent != nullptr)
+		{
+			InitializePlayerInput(Pawn->InputComponent);
+		}
+	}
+	*/
+	
+	if (CurrentState == ModularGameplayTags::InitState_DataAvailable
+	&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
+	{
+		APawn* Pawn = GetPawn<APawn>();
+		UModularAbilitySystemComponent* ModularASC = GetModularAbilitySystemComponent();
+		if (!ensure(Pawn && ModularASC))
+		{
+			return;
+		}
+		
+		// The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
+		// The ability system component and attribute sets live on the player state.
+		InitializeAbilitySystem(ModularASC, Pawn);
+		
 		if (Pawn->InputComponent != nullptr)
 		{
 			InitializePlayerInput(Pawn->InputComponent);
@@ -292,7 +354,7 @@ void UModularAbilityExtensionComponent::OnActorInitStateChanged(const FActorInit
 	{
 		if (Params.FeatureState == ModularGameplayTags::InitState_DataInitialized)
 		{
-			// If the extension component says all all other components are initialized, try to progress to next state.
+			// If the extension component says all other components are initialized, try to progress to next state.
 			CheckDefaultInitialization();
 		}
 	}
@@ -311,6 +373,29 @@ void UModularAbilityExtensionComponent::CheckDefaultInitialization()
 	// This will try to progress from spawned (which is only set in BeginPlay) through the data initialization stages
 	// until it gets to gameplay ready.
 	ContinueInitStateChain(StateChain);
+}
+
+void UModularAbilityExtensionComponent::OnAbilitySystemInitialized_RegisterAndCall(
+	FSimpleMulticastDelegate::FDelegate Delegate)
+{
+	if (!OnAbilitySystemInitialized.IsBoundToObject(Delegate.GetUObject()))
+	{
+		OnAbilitySystemInitialized.Add(Delegate);
+	}
+
+	if (AbilitySystemComponent)
+	{
+		Delegate.Execute();
+	}
+}
+
+void UModularAbilityExtensionComponent::OnAbilitySystemUninitialized_Register(
+	FSimpleMulticastDelegate::FDelegate Delegate)
+{
+	if (!OnAbilitySystemUninitialized.IsBoundToObject(Delegate.GetUObject()))
+	{
+		OnAbilitySystemUninitialized.Add(Delegate);
+	}
 }
 
 /**

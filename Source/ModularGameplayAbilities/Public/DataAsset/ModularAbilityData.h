@@ -10,7 +10,7 @@
  * Global data asset that contains modular ability data.
  */
 UCLASS(BlueprintType, Const, meta=(DisplayName="Modular Ability Data", ShortTooltip="Global data asset containing modular ability data."))
-class UModularAbilityData : public UPrimaryDataAsset
+class MODULARGAMEPLAYABILITIES_API UModularAbilityData : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 

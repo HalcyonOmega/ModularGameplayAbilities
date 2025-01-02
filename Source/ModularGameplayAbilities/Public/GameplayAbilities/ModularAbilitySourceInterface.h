@@ -12,7 +12,7 @@ struct FGameplayTagContainer;
 
 /** Base interface for anything acting as a ability calculation source */
 UINTERFACE()
-class UModularAbilitySourceInterface : public UInterface
+class MODULARGAMEPLAYABILITIES_API UModularAbilitySourceInterface : public UInterface
 {
 	GENERATED_UINTERFACE_BODY()
 };

@@ -17,7 +17,7 @@
  *	Data used by the ability set to grant attribute sets.
  */
 USTRUCT(BlueprintType)
-struct FModularAbilitySet_AttributeSet
+struct MODULARGAMEPLAYABILITIES_API FModularAbilitySet_AttributeSet
 {
 	GENERATED_BODY()
 
@@ -32,7 +32,7 @@ public:
  * Data used by the ability set to grant gameplay abilities.
  */
 USTRUCT(BlueprintType)
-struct FModularAbilitySet_GameplayAbility
+struct MODULARGAMEPLAYABILITIES_API FModularAbilitySet_GameplayAbility
 {
 	GENERATED_BODY()
 
@@ -56,7 +56,7 @@ public:
  * Data used by the ability set to grant gameplay effects.
  */
 USTRUCT(BlueprintType)
-struct FModularAbilitySet_GameplayEffect
+struct MODULARGAMEPLAYABILITIES_API FModularAbilitySet_GameplayEffect
 {
 	GENERATED_BODY()
 
@@ -74,7 +74,7 @@ public:
  * Data used to store handles to what has been granted by the ability set.
  */
 USTRUCT(BlueprintType)
-struct FModularAbilitySet_GrantedHandles
+struct MODULARGAMEPLAYABILITIES_API FModularAbilitySet_GrantedHandles
 {
 	GENERATED_BODY()
 

@@ -11,7 +11,7 @@
  * Typical use case:
  * 1. Add the ModularAbilitySystemComponent to the PlayerState Actor.
  * 2. Add the ModularAbilityExtensionComponent to your ModularExperienceCharacter Pawn.
- * 3. Implement the PawnAbilityDataInterface into your game's PawnData class.
+ * 3. Implement the AbilityPawnDataInterface into your game's PawnData class.
  * 4. Add PawnData Assets to your experience as usual, now including ability configurations.
  */
 class FModularGameplayAbilitiesModule final : public IModuleInterface

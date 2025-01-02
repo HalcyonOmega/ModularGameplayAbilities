@@ -56,7 +56,13 @@ public:
 	/**
 	 * @}
 	 */
+	
+	/** Register with the OnAbilitySystemInitialized delegate and broadcast if our pawn has been registered with the ability system component */
+	void OnAbilitySystemInitialized_RegisterAndCall(FSimpleMulticastDelegate::FDelegate Delegate);
 
+	/** Register with the OnAbilitySystemUninitialized delegate fired when our pawn is removed as the ability system's avatar actor */
+	void OnAbilitySystemUninitialized_Register(FSimpleMulticastDelegate::FDelegate Delegate);
+	
 protected:
 	virtual void OnRegister() override;
 	virtual void BeginPlay() override;
@@ -65,7 +71,7 @@ protected:
 	/**
 	 * Pointer to the ability system component that is cached for convenience.
 	 *
-	 * @todo Look at Unreal service/singleton model to replace this convoluted startup.
+	 * @TODO: Look at Unreal service/singleton model to replace this convoluted startup.
 	 */
 	UPROPERTY()
 	TObjectPtr<UModularAbilitySystemComponent> AbilitySystemComponent;
