@@ -12,38 +12,27 @@
 /**
  * EModularAbilityActivationPolicy
  *
- *	Defines how an ability is meant to activate.
+ * Defines how an ability is meant to activate.
  */
 UENUM(BlueprintType)
 enum class EModularAbilityActivationPolicy : uint8
 {
-	// Try to activate the ability when the input is triggered.
-	OnInputTriggered,
-
-	// Continually try to activate the ability while the input is active.
-	WhileInputActive,
-
-	// Try to activate the ability when an avatar is assigned.
-	OnSpawn
+	OnInputTriggered, // Try to activate the ability when the input is triggered.
+	WhileInputActive, // Continually try to activate the ability while the input is active.
+	OnSpawn // Try to activate the ability when an avatar is assigned.
 };
 
 /**
  * EModularAbilityActivationGroup
  *
- *	Defines how an ability activates in relation to other abilities.
+ * Defines how an ability activates in relation to other abilities.
  */
 UENUM(BlueprintType)
 enum class EModularAbilityActivationGroup : uint8
 {
-	// Ability runs independently of all other abilities.
-	Independent,
-
-	// Ability is canceled and replaced by other exclusive abilities.
-	Exclusive_Replaceable,
-
-	// Ability blocks all other exclusive abilities from activating.
-	Exclusive_Blocking,
-
+	Independent, // Ability runs independently of all other abilities.
+	Exclusive_Replaceable, // Ability is canceled and replaced by other exclusive abilities.
+	Exclusive_Blocking, // Ability blocks all other exclusive abilities from activating.
 	MAX	UMETA(Hidden)
 };
 
@@ -97,7 +86,7 @@ public:
 	AModularCharacter* GetModularCharacterFromActorInfo() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Ability")
-	UModularPawnComponent* GetHeroComponentFromActorInfo() const;
+	UModularPawnComponent* GetModularPawnComponentFromActorInfo() const;
 
 	EModularAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 	EModularAbilityActivationGroup GetActivationGroup() const { return ActivationGroup; }

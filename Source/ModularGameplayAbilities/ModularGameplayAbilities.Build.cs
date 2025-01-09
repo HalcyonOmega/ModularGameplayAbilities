@@ -28,7 +28,8 @@ public class ModularGameplayAbilities : ModuleRules
 				"GameplayAbilities",
 				"ModalCamera",
 				"ModularGameplay",
-				"ModularGameplayExperiences"
+				"ModularGameplayExperiences",
+				"NetCore"
 			}
 			);
 			
@@ -52,6 +53,18 @@ public class ModularGameplayAbilities : ModuleRules
 			}
 			);
 		
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(
+				new string[]
+				{
+					"BlueprintGraph",
+					"EditorFramework",
+					"RigVMDeveloper",
+					"UnrealEd"
+				}
+			);
+		}
 		
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

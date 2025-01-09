@@ -89,7 +89,7 @@ AModularCharacter* UModularGameplayAbility::GetModularCharacterFromActorInfo() c
 	return (CurrentActorInfo ? Cast<AModularCharacter>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 }
 
-UModularPawnComponent* UModularGameplayAbility::GetHeroComponentFromActorInfo() const
+UModularPawnComponent* UModularGameplayAbility::GetModularPawnComponentFromActorInfo() const
 {
 	return (CurrentActorInfo ? UModularPawnComponent::FindModularPawnComponent(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 }

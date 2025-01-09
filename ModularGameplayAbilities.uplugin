@@ -5,7 +5,7 @@
 	"FriendlyName": "Modular Gameplay Abilities",
 	"Description": "Adds data-driven modular Experience and Data capabilities to the Gameplay Abilities System.",
 	"Category": "Other",
-	"CreatedBy": "Chronicler",
+	"CreatedBy": "Chronicler & Halcyonyx Studios",
 	"CreatedByURL": "https://www.chroniclersoftware.com",
 	"DocsURL": "",
 	"MarketplaceURL": "",
@@ -13,12 +13,57 @@
 	"CanContainContent": true,
 	"IsBetaVersion": true,
 	"IsExperimentalVersion": false,
-	"Installed": false,
+	"Installed": true,
 	"Modules": [
 		{
 			"Name": "ModularGameplayAbilities",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PreDefault",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		},
+		{
+			"Name": "ModularGameplayAbilitiesDeveloper",
+			"Type": "UncookedOnly",
+			"LoadingPhase": "PreDefault",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		},
+		{
+			"Name": "ModularGameplayAbilitiesScaffold",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		},
+		{
+			"Name": "ModularGameplayAbilitiesEditor",
+			"Type": "Editor",
+			"LoadingPhase": "PreLoadingScreen",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		},
+		{
+			"Name": "ModularGameplayAbilitiesEditorCommon",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
 		}
 	],
 	"Plugins": [
@@ -44,6 +89,10 @@
 		},
 		{
 			"Name": "ModularGameplayExperiences",
+			"Enabled": true
+		},
+		{
+			"Name": "RigVM",
 			"Enabled": true
 		}
 	]

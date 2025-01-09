@@ -279,15 +279,10 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 	else if (CurrentState == ModularGameplayTags::InitState_DataAvailable
 		&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
 	{
-		/* @TODO: Relook architecture. Same as above.
 		// Wait for player state ASC and extension component.
 		const IAbilitySystemInterface* ModularPS = Cast<IAbilitySystemInterface>(GetPlayerState<AModularPlayerState>());
-
-		return ModularPS->GetAbilitySystemComponent() && Manager->HasFeatureReachedInitState(Pawn, UModularPawnComponent::NAME_ActorFeatureName, ModularGameplayTags::InitState_DataInitialized);
-		*/
-			
 		// Transition to initialize if all features have their data available
-		return Manager->HaveAllFeaturesReachedInitState(Pawn, ModularGameplayTags::InitState_DataAvailable);
+		return ModularPS->GetAbilitySystemComponent() && Manager->HasFeatureReachedInitState(Pawn, UModularPawnComponent::NAME_ActorFeatureName, ModularGameplayTags::InitState_DataInitialized);
 	}
 	else if (CurrentState == ModularGameplayTags::InitState_DataInitialized
 		&& DesiredState == ModularGameplayTags::InitState_GameplayReady)
@@ -303,7 +298,6 @@ void UModularAbilityExtensionComponent::HandleChangeInitState(UGameFrameworkComp
 	const FGameplayTag CurrentState,
 	const FGameplayTag DesiredState)
 {
-	/*
 	if (CurrentState == ModularGameplayTags::InitState_DataAvailable
 		&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
 	{
@@ -325,8 +319,7 @@ void UModularAbilityExtensionComponent::HandleChangeInitState(UGameFrameworkComp
 			InitializePlayerInput(Pawn->InputComponent);
 		}
 	}
-	*/
-	
+	/* @TODO: 
 	if (CurrentState == ModularGameplayTags::InitState_DataAvailable
 	&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
 	{
@@ -345,7 +338,7 @@ void UModularAbilityExtensionComponent::HandleChangeInitState(UGameFrameworkComp
 		{
 			InitializePlayerInput(Pawn->InputComponent);
 		}
-	}
+	}*/
 }
 
 void UModularAbilityExtensionComponent::OnActorInitStateChanged(const FActorInitStateChangedParams& Params)

@@ -30,9 +30,7 @@ void UModularAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	AbilityActivatedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::OnAbilityActivatedCallback);
-	AbilityFailedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::OnAbilityFailedCallback);
-	AbilityEndedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::OnAbilityEndedCallback);
+	RegisterDelegates();
 
 	// Grant startup effects on begin play instead of from within InitAbilityActorInfo to avoid
 	// "ticking" periodic effects when BP is first opened
@@ -47,6 +45,85 @@ void UModularAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayR
 	}
 
 	Super::EndPlay(EndPlayReason);
+}
+
+void UModularAbilitySystemComponent::BeginDestroy()
+{
+	UnregisterDelegates();
+
+	Super::BeginDestroy();
+}
+
+void UModularAbilitySystemComponent::RegisterDelegates()
+{
+	UE_LOG(LogModularGameplayAbilities, Verbose, TEXT("Registering Delegates for %s"), *GetNameSafe(this));
+
+	UnregisterDelegates();
+
+	/* Ability Delegates */
+	AbilityActivatedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::HandleOnAbilityActivate);
+	AbilityCommittedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::HandleOnAbilityCommit);
+	AbilityEndedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::HandleOnAbilityEnd);
+	AbilityFailedCallbacks.AddUObject(this, &UModularAbilitySystemComponent::HandleOnAbilityFail);
+
+	/* Attribute Delegates */
+	TArray<FGameplayAttribute> Attributes;
+	GetAllAttributes(Attributes);
+	
+	for (const FGameplayAttribute Attribute : Attributes)
+	{
+		GetGameplayAttributeValueChangeDelegate(Attribute).AddUObject(this, &UModularAbilitySystemComponent::HandleOnAttributeChange);
+	}
+
+	/* Effect Delegates*/
+	OnActiveGameplayEffectAddedDelegateToSelf.AddUObject(this, &UModularAbilitySystemComponent::HandleOnGameplayEffectAdd);
+	OnAnyGameplayEffectRemovedDelegate().AddUObject(this, &UModularAbilitySystemComponent::HandleOnGameplayEffectRemove);
+
+	/* Gameplay Tag Delegates */
+	RegisterGenericGameplayTagEvent().AddUObject(this, &UModularAbilitySystemComponent::HandleOnGameplayTagChange);
+}
+
+void UModularAbilitySystemComponent::UnregisterDelegates()
+{
+	/* Ability Delegates */
+	AbilityActivatedCallbacks.RemoveAll(this);
+	AbilityCommittedCallbacks.RemoveAll(this);
+	AbilityEndedCallbacks.RemoveAll(this);
+	AbilityFailedCallbacks.RemoveAll(this);
+
+	/* Attribute Delegates */
+	TArray<FGameplayAttribute> Attributes;
+	GetAllAttributes(Attributes);
+	
+	for (const FGameplayAttribute Attribute : Attributes)
+	{
+		GetGameplayAttributeValueChangeDelegate(Attribute).RemoveAll(this);
+	}
+
+	/* Effect Delegates*/
+	OnActiveGameplayEffectAddedDelegateToSelf.RemoveAll(this);
+	OnAnyGameplayEffectRemovedDelegate().RemoveAll(this);
+
+	for (const FActiveGameplayEffectHandle GameplayEffectHandle : GameplayEffectHandles)
+	{
+		if (FOnActiveGameplayEffectStackChange* EffectStackChangeDelegate = OnGameplayEffectStackChangeDelegate(GameplayEffectHandle))
+		{
+			EffectStackChangeDelegate->RemoveAll(this);
+		}
+
+		if (FOnActiveGameplayEffectTimeChange* EffectTimeChangeDelegate = OnGameplayEffectTimeChangeDelegate(GameplayEffectHandle))
+		{
+			EffectTimeChangeDelegate->RemoveAll(this);
+		}
+	}
+	
+	/* Gameplay Tag Delegates */
+	RegisterGenericGameplayTagEvent().RemoveAll(this);
+
+	for (const FGameplayTag GameplayTagBoundDelegate : GameplayTagHandles)
+	{
+		RegisterGameplayTagEvent(GameplayTagBoundDelegate).RemoveAll(this);
+	}
 }
 
 void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
@@ -87,21 +164,459 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 			ModularAnimInst->InitializeWithAbilitySystem(this);
 		}
 		
-		// For PlayerState client pawns, setup and update owner on companion components if pawns have them
-		/* @TODO: UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(InAvatarActor);
-		if (CoreComponent)
-		{
-			CoreComponent->SetupOwner();
-			CoreComponent->RegisterAbilitySystemDelegates(this);
-			CoreComponent->SetStartupAbilitiesGranted(true);
-		}*/
-		
-		/* Broadcast to Blueprint InitAbilityActorInfo was called
-		 *
-		 * This will happen multiple times for both client / server */
+		/* This will happen multiple times for both client/server */
 		OnInitAbilityActorInfo.Broadcast();
 		
 		TryActivateAbilitiesOnSpawn();
+	}
+}
+
+void UModularAbilitySystemComponent::HandleOnAbilityActivate(UGameplayAbility* Ability)
+{
+	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityActivatedCallback %s"), *Ability->GetName());
+	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
+	 * const AActor* Avatar = GetAvatarActor();
+	if (!Avatar)
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("UModularAbilitySystemComponent::OnAbilityActivated No OwnerActor for this ability: %s"), *Ability->GetName());
+		return;
+	} */
+	
+	OnAbilityActivate.Broadcast(Ability);
+}
+
+void UModularAbilitySystemComponent::HandleOnAbilityCommit(UGameplayAbility* ActivatedAbility)
+{
+	if (!ActivatedAbility) {return;}
+	
+	OnAbilityCommit.Broadcast(ActivatedAbility);
+
+	/* Handle cooldown */
+	if (UGameplayEffect* CooldownGE = ActivatedAbility->GetCooldownGameplayEffect(); !CooldownGE) {return;}
+
+	if (!ActivatedAbility->IsInstantiated()) {return;}
+
+	const FGameplayTagContainer* CooldownTags = ActivatedAbility->GetCooldownTags();
+	if (!CooldownTags || CooldownTags->Num() <= 0) {return;}
+
+	FGameplayAbilityActorInfo ActorInfo = ActivatedAbility->GetActorInfo();
+	const FGameplayAbilitySpecHandle AbilitySpecHandle = ActivatedAbility->GetCurrentAbilitySpecHandle();
+
+	float TimeRemaining = 0.f;
+	float Duration = 0.f;
+	ActivatedAbility->GetCooldownTimeRemainingAndDuration(AbilitySpecHandle, &ActorInfo, TimeRemaining, Duration);
+
+	HandleOnCooldownStart(ActivatedAbility, *CooldownTags, TimeRemaining, Duration);
+
+	/* Register delegate to monitor any change to cooldown gameplay tag to be able to figure out when a cooldown expires. */
+	TArray<FGameplayTag> GameplayTags;
+	CooldownTags->GetGameplayTagArray(GameplayTags);
+	
+	for (const FGameplayTag GameplayTag : GameplayTags)
+	{
+		RegisterGameplayTagEvent(GameplayTag, EGameplayTagEventType::AnyCountChange).AddUObject(this, &UModularAbilitySystemComponent::HandleOnCooldownChange, AbilitySpecHandle, Duration, true);
+		GameplayTagHandles.AddUnique(GameplayTag);
+	}
+}
+
+void UModularAbilitySystemComponent::HandleOnAbilityEnd(UGameplayAbility* Ability)
+{
+	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback %s"), *Ability->GetName());
+	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
+	 * const AActor* Avatar = GetAvatarActor();
+	if (!Avatar)
+	{
+		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback No OwnerActor for this ability: %s"), *Ability->GetName());
+		return;
+	} */
+
+	OnAbilityEnd.Broadcast(Ability);
+}
+
+void UModularAbilitySystemComponent::HandleOnAbilityFail(const UGameplayAbility* Ability,
+	const FGameplayTagContainer& Tags)
+{
+	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityFailedCallback %s"), *Ability->GetName());
+	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
+	 * const AActor* Avatar = GetAvatarActor();
+	if (!Avatar)
+	{
+		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityFailed No OwnerActor for this ability: %s Tags: %s"), *Ability->GetName(), *Tags.ToString());
+		return;
+	} */
+
+	OnAbilityFail.Broadcast(Ability, Tags);
+}
+
+void UModularAbilitySystemComponent::HandleOnCooldownStart(UGameplayAbility* Ability, const FGameplayTagContainer& CooldownTags, float TimeRemaining, float Duration)
+{
+	OnCooldownStart.Broadcast(Ability, CooldownTags, TimeRemaining, Duration);
+}
+
+void UModularAbilitySystemComponent::HandleOnCooldownChange(const FGameplayTag GameplayTag, int32 NewCount, FGameplayAbilitySpecHandle AbilitySpecHandle, float Duration, bool bNewRemove)
+{
+	FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
+	if (!AbilitySpec) {return;} /* Ability might have been cleared when cooldown expires. */		
+
+	if (UGameplayAbility* Ability = AbilitySpec->Ability; IsValid(Ability))
+	{
+		if (NewCount != 0) {OnCooldownChange.Broadcast(Ability, GameplayTag, NewCount, Duration);}
+		else {HandleOnCooldownEnd(Ability, GameplayTag);}
+	}
+}
+
+void UModularAbilitySystemComponent::HandleOnCooldownEnd(UGameplayAbility* ActivatedAbility, const FGameplayTag CooldownTag)
+{
+	OnCooldownEnd.Broadcast(ActivatedAbility, CooldownTag);
+	RegisterGameplayTagEvent(CooldownTag, EGameplayTagEventType::AnyCountChange).RemoveAll(this);
+}
+
+void UModularAbilitySystemComponent::HandlePreAttributeChange(UAttributeSet* AttributeSet,
+	const FGameplayAttribute& Attribute, float NewValue)
+{
+	OnPreAttributeChange.Broadcast(AttributeSet, Attribute, NewValue);
+}
+
+void UModularAbilitySystemComponent::HandleOnAttributeChange(const FOnAttributeChangeData& Data)
+{
+	const float NewValue = Data.NewValue;
+	const float OldValue = Data.OldValue;
+
+	/* Prevent broadcast Attribute changes if New and Old values are the same, most likely because of clamping in post gameplay effect execute. */
+	if (OldValue == NewValue) {return;}
+
+	const FGameplayEffectModCallbackData* ModData = Data.GEModData;
+	FGameplayTagContainer SourceTags = FGameplayTagContainer();
+	if (ModData)
+	{
+		SourceTags = *ModData->EffectSpec.CapturedSourceTags.GetAggregatedTags();
+	}
+
+	/* Broadcast attribute change to component. */
+	OnAttributeChange.Broadcast(Data.Attribute, NewValue - OldValue, SourceTags);
+}
+
+void UModularAbilitySystemComponent::HandleOnGameplayEffectAdd(UAbilitySystemComponent* Target,
+	const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveHandle)
+{
+	FGameplayTagContainer AssetTags;
+	SpecApplied.GetAllAssetTags(AssetTags);
+
+	FGameplayTagContainer GrantedTags;
+	SpecApplied.GetAllGrantedTags(GrantedTags);
+
+	OnGameplayEffectAdd.Broadcast(AssetTags, GrantedTags, ActiveHandle);
+
+	if (FOnActiveGameplayEffectStackChange* Delegate = OnGameplayEffectStackChangeDelegate(ActiveHandle))
+	{
+		Delegate->AddUObject(this, &UModularAbilitySystemComponent::HandleOnGameplayEffectStackChange);
+	}
+
+	if (FOnActiveGameplayEffectTimeChange* Delegate = OnGameplayEffectTimeChangeDelegate(ActiveHandle))
+	{
+		Delegate->AddUObject(this, &UModularAbilitySystemComponent::HandleOnGameplayEffectTimeChange);
+	}
+
+	GameplayEffectHandles.AddUnique(ActiveHandle);
+}
+
+void UModularAbilitySystemComponent::HandleOnGameplayEffectRemove(const FActiveGameplayEffect& EffectRemoved)
+{
+	FGameplayTagContainer AssetTags;
+	EffectRemoved.Spec.GetAllAssetTags(AssetTags);
+
+	FGameplayTagContainer GrantedTags;
+	EffectRemoved.Spec.GetAllGrantedTags(GrantedTags);
+
+	OnGameplayEffectStackChange.Broadcast(AssetTags, GrantedTags, EffectRemoved.Handle, 0, 1);
+	OnGameplayEffectRemove.Broadcast(AssetTags, GrantedTags, EffectRemoved.Handle);
+}
+
+void UModularAbilitySystemComponent::HandleOnGameplayEffectStackChange(FActiveGameplayEffectHandle ActiveHandle,
+	int32 NewStackCount, int32 PreviousStackCount)
+{
+	const FActiveGameplayEffect* GameplayEffect = GetActiveGameplayEffect(ActiveHandle);
+	if (!GameplayEffect) {return;}
+
+	FGameplayTagContainer AssetTags;
+	GameplayEffect->Spec.GetAllAssetTags(AssetTags);
+
+	FGameplayTagContainer GrantedTags;
+	GameplayEffect->Spec.GetAllGrantedTags(GrantedTags);
+
+	OnGameplayEffectStackChange.Broadcast(AssetTags, GrantedTags, ActiveHandle, NewStackCount, PreviousStackCount);
+}
+
+void UModularAbilitySystemComponent::HandleOnGameplayEffectTimeChange(FActiveGameplayEffectHandle ActiveHandle,
+	float NewStartTime, float NewDuration)
+{
+	const FActiveGameplayEffect* GameplayEffect = GetActiveGameplayEffect(ActiveHandle);
+	if (!GameplayEffect) {return;}
+
+	FGameplayTagContainer AssetTags;
+	GameplayEffect->Spec.GetAllAssetTags(AssetTags);
+
+	FGameplayTagContainer GrantedTags;
+	GameplayEffect->Spec.GetAllGrantedTags(GrantedTags);
+
+	OnGameplayEffectTimeChange.Broadcast(AssetTags, GrantedTags, ActiveHandle, NewStartTime, NewDuration);
+}
+
+void UModularAbilitySystemComponent::HandlePostGameplayEffectExecute(UAttributeSet* AttributeSet,
+	const FGameplayEffectModCallbackData& Data)
+{
+	if (!AttributeSet)
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("ModularAttributeSet isn't valid"));
+		return;
+	}
+
+	AActor* SourceActor = nullptr;
+	AActor* TargetActor = nullptr;
+	GetSourceAndTargetFromContext<AActor>(Data, SourceActor, TargetActor);
+
+	const FGameplayTagContainer SourceTags = GetSourceTagsFromContext(Data);
+	const FGameplayEffectContextHandle Context = Data.EffectSpec.GetContext();
+	
+	/* Compute the delta between old and new, if it is available. */
+	float DeltaValue = 0;
+	if (Data.EvaluatedData.ModifierOp == EGameplayModOp::Type::Additive)
+	{
+		/* If this was additive, store the raw delta value to be passed along later. */
+		DeltaValue = Data.EvaluatedData.Magnitude;
+	}
+
+	/* Delegate any attribute handling to Blueprints. */
+	FModularGameplayEffectExecuteData Payload;
+	Payload.AttributeSet = AttributeSet;
+	Payload.AbilitySystemComponent = AttributeSet->GetOwningAbilitySystemComponent();
+	Payload.DeltaValue = DeltaValue;
+	OnPostGameplayEffectExecute.Broadcast(Data.EvaluatedData.Attribute, SourceActor, TargetActor, SourceTags, Payload);
+}
+
+void UModularAbilitySystemComponent::HandleOnGameplayTagChange(const FGameplayTag GameplayTag, const int32 NewCount)
+{
+	OnGameplayTagChange.Broadcast(GameplayTag, NewCount);
+}
+
+float UModularAbilitySystemComponent::GetAttributeBaseValue(FGameplayAttribute Attribute) const
+{
+	if (!Attribute.IsValid())
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("Passed in Attribute is invalid (None). Will return 0.f."))
+		return 0.f;
+	}
+
+	if (!HasAttributeSetForAttribute(Attribute))
+	{
+		const UClass* AttributeSet = Attribute.GetAttributeSetClass();
+		UE_LOG(
+			LogModularGameplayAbilities,
+			Error,
+			TEXT("Trying to get value of attribute [%s.%s]. %s doesn't seem to be granted to %s. Returning 0.f"),
+			*GetNameSafe(AttributeSet),
+			*Attribute.GetName(),
+			*GetNameSafe(AttributeSet),
+			*GetNameSafe(this)
+		);
+
+		return 0.f;
+	}
+
+	return GetNumericAttributeBase(Attribute);
+}
+
+float UModularAbilitySystemComponent::GetAttributeCurrentValue(FGameplayAttribute Attribute) const
+{
+	if (!Attribute.IsValid())
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("Passed in Attribute is invalid (None). Will return 0.f."))
+		return 0.f;
+	}
+
+	if (!HasAttributeSetForAttribute(Attribute))
+	{
+		const UClass* AttributeSet = Attribute.GetAttributeSetClass();
+		UE_LOG(
+			LogModularGameplayAbilities,
+			Error,
+			TEXT("Trying to get value of attribute [%s.%s]. %s doesn't seem to be granted to %s. Returning 0.f"),
+			*GetNameSafe(AttributeSet),
+			*Attribute.GetName(),
+			*GetNameSafe(AttributeSet),
+			*GetNameSafe(this)
+		);
+
+		return 0.f;
+	}
+
+	return GetNumericAttribute(Attribute);
+}
+
+void UModularAbilitySystemComponent::GrantAbility(TSubclassOf<UGameplayAbility> Ability, int32 Level)
+{
+	if (!GetOwner() || !Ability) {return;}
+
+	if (!IsOwnerActorAuthoritative())
+	{
+		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("GrantAbility Called on non authority"));
+		return;
+	}
+
+	FGameplayAbilitySpec Spec;
+	Spec.Ability = Ability.GetDefaultObject();
+
+	FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(Ability, Level, INDEX_NONE, GetOwner());
+	GiveAbility(AbilitySpec);
+}
+
+void UModularAbilitySystemComponent::RemoveAbility(TSubclassOf<UGameplayAbility> Ability)
+{
+	TArray<TSubclassOf<UGameplayAbility>> AbilitiesToRemove;
+	AbilitiesToRemove.Add(Ability);
+	return RemoveAbilities(AbilitiesToRemove);
+}
+
+void UModularAbilitySystemComponent::RemoveAbilities(TArray<TSubclassOf<UGameplayAbility>> Abilities)
+{
+	if (!GetOwner() || !IsOwnerActorAuthoritative()) {return;}
+
+	/* Remove any abilities added from a previous call. */
+	TArray<FGameplayAbilitySpecHandle> AbilitiesToRemove;
+	for (const FGameplayAbilitySpec& Spec : GetActivatableAbilities())
+	{
+		if (Abilities.Contains(Spec.Ability->GetClass()))
+		{
+			AbilitiesToRemove.Add(Spec.Handle);
+		}
+	}
+
+	/* Do in two passes so the removal happens after we have the full list. */
+	for (const FGameplayAbilitySpecHandle AbilityToRemove : AbilitiesToRemove)
+	{
+		ClearAbility(AbilityToRemove);
+	}
+
+}
+
+bool UModularAbilitySystemComponent::IsUsingAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	if (!AbilityClass)
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("IsUsingAbilityByClass: Provided AbilityClass is null"))
+		return false;
+	}
+
+	return GetActiveAbilitiesByClass(AbilityClass).Num() > 0;
+}
+
+bool UModularAbilitySystemComponent::IsUsingAbilityByTags(FGameplayTagContainer AbilityTags)
+{
+	return GetActiveAbilitiesByTags(AbilityTags).Num() > 0;
+}
+
+TArray<UGameplayAbility*> UModularAbilitySystemComponent::GetActiveAbilitiesByClass(
+	TSubclassOf<UGameplayAbility> AbilityToSearch) const
+{
+	TArray<FGameplayAbilitySpec> Specs = GetActivatableAbilities();
+	TArray<struct FGameplayAbilitySpec*> MatchingGameplayAbilities;
+	TArray<UGameplayAbility*> ActiveAbilities;
+
+	// First, search for matching Abilities for this class
+	for (const FGameplayAbilitySpec& Spec : Specs)
+	{
+		if (Spec.Ability && Spec.Ability->GetClass()->IsChildOf(AbilityToSearch))
+		{
+			MatchingGameplayAbilities.Add(const_cast<FGameplayAbilitySpec*>(&Spec));
+		}
+	}
+
+	// Iterate the list of all ability specs
+	for (const FGameplayAbilitySpec* Spec : MatchingGameplayAbilities)
+	{
+		// Iterate all instances on this ability spec, which can include instance per execution abilities
+		TArray<UGameplayAbility*> AbilityInstances = Spec->GetAbilityInstances();
+
+		for (UGameplayAbility* ActiveAbility : AbilityInstances)
+		{
+			if (ActiveAbility->IsActive())
+			{
+				ActiveAbilities.Add(ActiveAbility);
+			}
+		}
+	}
+
+	return ActiveAbilities;
+}
+
+TArray<UGameplayAbility*> UModularAbilitySystemComponent::GetActiveAbilitiesByTags(
+	const FGameplayTagContainer GameplayTagContainer) const
+{
+	TArray<UGameplayAbility*> ActiveAbilities;
+	TArray<FGameplayAbilitySpec*> MatchingGameplayAbilities;
+	GetActivatableGameplayAbilitySpecsByAllMatchingTags(GameplayTagContainer, MatchingGameplayAbilities, false);
+
+	// Iterate the list of all ability specs
+	for (const FGameplayAbilitySpec* Spec : MatchingGameplayAbilities)
+	{
+		// Iterate all instances on this ability spec
+		TArray<UGameplayAbility*> AbilityInstances = Spec->GetAbilityInstances();
+
+		for (UGameplayAbility* ActiveAbility : AbilityInstances)
+		{
+			if (ActiveAbility->IsActive())
+			{
+				ActiveAbilities.Add(ActiveAbility);
+			}
+		}
+	}
+
+	return ActiveAbilities;
+}
+
+void UModularAbilitySystemComponent::SetAttributeBaseValue(FGameplayAttribute Attribute, float NewValue)
+{
+	SetNumericAttributeBase(Attribute, NewValue);
+}
+
+void UModularAbilitySystemComponent::ClampAttributeBaseValue(FGameplayAttribute Attribute, float MinValue, float MaxValue)
+{
+	const float CurrentValue = GetAttributeBaseValue(Attribute);
+	const float NewValue = FMath::Clamp(CurrentValue, MinValue, MaxValue);
+	SetAttributeBaseValue(Attribute, NewValue);
+}
+
+void UModularAbilitySystemComponent::AdjustAttributeForMaxChange(UAttributeSet* AttributeSet,
+	const FGameplayAttribute AffectedAttributeProperty, const FGameplayAttribute MaxAttribute, float NewMaxValue)
+{
+	FGameplayAttributeData* AttributeData = AffectedAttributeProperty.GetGameplayAttributeData(AttributeSet);
+	if (!AttributeData)
+	{
+		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("AdjustAttributeForMaxChange() AttributeData returned by AffectedAttributeProperty.GetGameplayAttributeData() seems to be invalid."))
+		return;
+	}
+
+	const FGameplayAttributeData* MaxAttributeData = MaxAttribute.GetGameplayAttributeData(AttributeSet);
+	if (!AttributeData)
+	{
+		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("AdjustAttributeForMaxChange() MaxAttributeData returned by MaxAttribute.GetGameplayAttributeData() seems to be invalid."))
+		return;
+	}
+
+	const float CurrentMaxValue = (*MaxAttributeData).GetCurrentValue();
+	const float CurrentValue = (*AttributeData).GetCurrentValue();
+
+	if (!FMath::IsNearlyEqual(CurrentMaxValue, NewMaxValue) && CurrentMaxValue > 0.f)
+	{
+		// Get the current relative percent
+		const float Ratio = CurrentValue / CurrentMaxValue;
+
+		// Calculate value for the affected attribute based on current ratio
+		const float NewValue = FMath::RoundToFloat(NewMaxValue * Ratio);
+
+		UE_LOG(LogModularGameplayAbilities, Verbose, TEXT("AdjustAttributeForMaxChange: CurrentValue: %f, CurrentMaxValue: %f, NewMaxValue: %f, NewValue: %f (Ratio: %f)"), CurrentValue, CurrentMaxValue, NewMaxValue, NewValue, Ratio)
+		UE_LOG(LogModularGameplayAbilities, Verbose, TEXT("AdjustAttributeForMaxChange: ApplyModToAttribute %s with %f"), *AffectedAttributeProperty.GetName(), NewValue)
+		ApplyModToAttribute(AffectedAttributeProperty, EGameplayModOp::Override, NewValue);
 	}
 }
 
@@ -287,7 +802,7 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 	//
 	// Try to activate all the abilities that are from presses and holds.
 	// We do it all at once so that held inputs don't activate the ability
-	// and then also send a input event to the ability because of the press.
+	// and then also send an input event to the ability because of the press.
 	//
 	for (const FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitiesToActivate)
 	{
@@ -392,80 +907,6 @@ void UModularAbilitySystemComponent::GetAdditionalActivationTagRequirements(cons
 	{
 		TagRelationshipMapping->GetRequiredAndBlockedActivationTags(AbilityTags, &OutActivationRequired, &OutActivationBlocked);
 	}
-}
-
-void UModularAbilitySystemComponent::OnAbilityActivatedCallback(UGameplayAbility* Ability)
-{
-	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityActivatedCallback %s"), *Ability->GetName());
-	const AActor* Avatar = GetAvatarActor();
-	if (!Avatar)
-	{
-		UE_LOG(LogModularGameplayAbilities, Error, TEXT("UModularAbilitySystemComponent::OnAbilityActivated No OwnerActor for this ability: %s"), *Ability->GetName());
-		return;
-	}
-
-	/* @TODO:
-	const UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(Avatar);
-	if (CoreComponent)
-	{
-		CoreComponent->OnAbilityActivated.Broadcast(Ability);
-		
-	}
-	*/
-	OnAbilityActivated.Broadcast(Ability);
-}
-
-void UModularAbilitySystemComponent::OnAbilityFailedCallback(const UGameplayAbility* Ability, const FGameplayTagContainer& Tags)
-{
-	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityFailedCallback %s"), *Ability->GetName());
-
-	const AActor* Avatar = GetAvatarActor();
-	if (!Avatar)
-	{
-		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityFailed No OwnerActor for this ability: %s Tags: %s"), *Ability->GetName(), *Tags.ToString());
-		return;
-	}
-
-	OnAbilityFailed.Broadcast(Ability, Tags);
-	/* @TODO: 
-	const UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(Avatar);
-	UGSCAbilityQueueComponent* AbilityQueueComponent = UGSCBlueprintFunctionLibrary::GetAbilityQueueComponent(Avatar);
-	if (CoreComponent)
-	{
-		CoreComponent->OnAbilityFailed.Broadcast(Ability, Tags);
-	}
-
-	if (AbilityQueueComponent)
-	{
-		AbilityQueueComponent->OnAbilityFailed(Ability, Tags);
-	}
-	*/
-}
-
-void UModularAbilitySystemComponent::OnAbilityEndedCallback(UGameplayAbility* Ability)
-{
-	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback %s"), *Ability->GetName());
-	const AActor* Avatar = GetAvatarActor();
-	if (!Avatar)
-	{
-		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback No OwnerActor for this ability: %s"), *Ability->GetName());
-		return;
-	}
-
-	OnAbilityEnded.Broadcast(Ability);
-	/*
-	const UGSCCoreComponent* CoreComponent = UGSCBlueprintFunctionLibrary::GetCompanionCoreComponent(Avatar);
-	UGSCAbilityQueueComponent* AbilityQueueComponent = UGSCBlueprintFunctionLibrary::GetAbilityQueueComponent(Avatar);
-	if (CoreComponent)
-	{
-		CoreComponent->OnAbilityEnded.Broadcast(Ability);
-	}
-
-	if (AbilityQueueComponent)
-	{
-		AbilityQueueComponent->OnAbilityEnded(Ability);
-	}
-	*/
 }
 
 void UModularAbilitySystemComponent::SetTagRelationshipMapping(UModularAbilityTagRelationshipMapping* NewMapping)
@@ -648,4 +1089,10 @@ void UModularAbilitySystemComponent::GrantStartupEffects()
 			AddedEffects.Add(EffectHandle);
 		}
 	}
+}
+
+const FGameplayTagContainer& UModularAbilitySystemComponent::GetSourceTagsFromContext(
+	const FGameplayEffectModCallbackData& Data)
+{
+	return *Data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
 }
