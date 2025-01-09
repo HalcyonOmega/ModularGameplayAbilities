@@ -7,7 +7,7 @@
 #include "MGAAttributeSetBlueprint.generated.h"
 
 /**
- * A Gameplay Blueprint Attribute Set is essentially a specialized Blueprint whose graphs control a GAS Attribute Set.
+ * A Modular Attribute Set is essentially a specialized Blueprint whose graphs control a GAS Attribute Set.
  * 
  * The factory should pick this for you automatically.
  * 

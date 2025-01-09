@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AttributeSet.h"
 #include "GameplayEffectTypes.h"
+#include "ModularAttributeSetBase.h"
 #include "Net/Core/PushModel/PushModelMacros.h"
 #include "Abilities/GameplayAbilityTypes.h"
 #include "Misc/EngineVersionComparison.h"
@@ -183,7 +184,7 @@ public:
 	 * @param MinValue The lower bound float to clamp the value within
 	 * @param MaxValue The higher bound float to clamp the value within
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Blueprint Attributes")
+	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute")
 	virtual void ClampAttributeValue(const FGameplayAttribute Attribute, float MinValue, float MaxValue);
 
 	// Note: const FGameplayAttribute& vs FGameplayAttribute for BlueprintCallables
@@ -198,7 +199,7 @@ public:
 	 *
 	 * @return Current Value for the Gameplay Attribute
 	 */
-	UFUNCTION(BlueprintPure, Category = "Blueprint Attributes", DisplayName="GetAttributeValue")
+	UFUNCTION(BlueprintPure, Category = "ModularGameplayAbilities|Attribute", DisplayName="GetAttributeValue")
 	float K2_GetAttributeValue(FGameplayAttribute Attribute, bool& bSuccessfullyFoundAttribute) const;
 	float GetAttributeValue(const FGameplayAttribute& Attribute, bool& bSuccessfullyFoundAttribute) const;
 
@@ -211,7 +212,7 @@ public:
 	 *
 	 * @return Base Value for the Gameplay Attribute
 	 */
-	UFUNCTION(BlueprintPure, Category = "Blueprint Attributes", DisplayName="GetAttributeBaseValue")
+	UFUNCTION(BlueprintPure, Category = "ModularGameplayAbilities|Attribute", DisplayName="GetAttributeBaseValue")
 	float K2_GetAttributeBaseValue(FGameplayAttribute Attribute, bool& bSuccessfullyFoundAttribute) const;
 	float GetAttributeBaseValue(const FGameplayAttribute& Attribute, bool& bSuccessfullyFoundAttribute) const;
 
@@ -221,7 +222,7 @@ public:
 	 * @param Attribute The Gameplay Attribute we want to set the base value
 	 * @param NewValue Float value to set
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Blueprint Attributes", DisplayName="SetAttributeValue")
+	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute", DisplayName="SetAttributeValue")
 	void K2_SetAttributeValue(FGameplayAttribute Attribute, float NewValue);
 	void SetAttributeValue(const FGameplayAttribute& Attribute, float NewValue) const;
 
@@ -229,18 +230,18 @@ public:
 	static bool IsGameplayAttributeDataClampedProperty(const FProperty* Property);
 
 	/** Gets information about owning actor */
-	UFUNCTION(BlueprintCallable, Category = "Blueprint Attributes", DisplayName="GetOwningActor")
+	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute", DisplayName="GetOwningActor")
 	AActor* K2_GetOwningActor() const;
 
 	/** Returns the Ability System Component of the Owning Actor */
-	UFUNCTION(BlueprintCallable, Category = "Blueprint Attributes", DisplayName="GetOwningAbilitySystemComponent")
+	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute", DisplayName="GetOwningAbilitySystemComponent")
 	UAbilitySystemComponent* K2_GetOwningAbilitySystemComponent() const;
 
 	/**
 	 * Returns the Owner's Ability System Component cached data about the owning actor that abilities will need to frequently access
 	 * (movement component, mesh component, anim instance, etc)
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Blueprint Attributes", DisplayName="GetActorInfo")
+	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute", DisplayName="GetActorInfo")
 	FGameplayAbilityActorInfo K2_GetActorInfo() const;
 
 	/** Internal implementation of Blueprint rep notifies GAMEPLAYATTRIBUTE_REPNOTIFY equivalent */
@@ -255,7 +256,7 @@ public:
 	 * @param InAttribute The Gameplay Attribute Data property to handle rep notify for. Simply wire in the appropriate
 	 * Blueprint member Attribute variable for the rep notify you're implementing.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Blueprint Attributes")
+	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute")
 	void HandleRepNotifyForGameplayAttributeData(const FGameplayAttributeData& InAttribute);
 	
 	/**
@@ -267,7 +268,7 @@ public:
 	 * @param InAttribute The Gameplay Attribute Data property to handle rep notify for. Simply wire in the appropriate
 	 * Blueprint member Attribute variable for the rep notify you're implementing.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Blueprint Attributes")
+	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute")
 	void HandleRepNotifyForGameplayClampedAttributeData(const FMGAClampedAttributeData& InAttribute);
 
 	//~ Begin UObject interface

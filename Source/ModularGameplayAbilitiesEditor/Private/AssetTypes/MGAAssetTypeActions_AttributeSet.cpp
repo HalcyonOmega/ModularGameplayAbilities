@@ -2,7 +2,7 @@
 
 #include "AssetTypes/MGAAssetTypeActions_AttributeSet.h"
 
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "AssetTypes/MGABlueprintFactory.h"
 #include "Editor/MGABlueprintEditor.h"
 #include "Misc/MessageDialog.h"
@@ -40,7 +40,7 @@ const TArray<FText>& FMGAAssetTypeActions_AttributeSet::GetSubMenus() const
 {
 	static const TArray SubMenus
 	{
-		LOCTEXT("AssetTypeActions_BlueprintAttributesSubMenu", "Gameplay Blueprint Attributes")
+		LOCTEXT("AssetTypeActions_BlueprintAttributesSubMenu", "Attributes")
 	};
 
 	return SubMenus;
@@ -50,7 +50,7 @@ UFactory* FMGAAssetTypeActions_AttributeSet::GetFactoryForBlueprintType(UBluepri
 {
 	check(InBlueprint && InBlueprint->IsA(UMGAAttributeSetBlueprint::StaticClass()));
 	UMGABlueprintFactory* Factory = NewObject<UMGABlueprintFactory>();
-	Factory->ParentClass = TSubclassOf<UMGAAttributeSetBlueprintBase>(*InBlueprint->GeneratedClass);
+	Factory->ParentClass = TSubclassOf<UModularAttributeSetBase>(*InBlueprint->GeneratedClass);
 	return Factory;
 }
 

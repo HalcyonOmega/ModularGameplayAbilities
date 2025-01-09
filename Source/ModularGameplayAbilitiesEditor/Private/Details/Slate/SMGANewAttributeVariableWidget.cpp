@@ -13,7 +13,7 @@
 #include "PinTypeSelectorFilter.h"
 #include "ScopedTransaction.h"
 #include "SlateOptMacros.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "Details/Slate/SMGAVariableRowWidget.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Kismet2/BlueprintEditorUtils.h"
@@ -327,7 +327,7 @@ bool SMGANewAttributeVariableWidget::AddMemberVariable(UBlueprint* InBlueprint, 
 				}
 				
 				FMemberReference MemberReference;
-				MemberReference.SetExternalMember(MemberName, UMGAAttributeSetBlueprintBase::StaticClass());
+				MemberReference.SetExternalMember(MemberName, UModularAttributeSetBase::StaticClass());
 
 				Node->FunctionReference = MemberReference;
 				Node->CreateNewGuid();

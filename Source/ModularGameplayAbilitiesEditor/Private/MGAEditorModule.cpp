@@ -61,7 +61,7 @@ void FMGAEditorModule::ShutdownModule()
 		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("GameplayAttributeData"));
 		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("MGAGameplayClampedAttributeData"));
 
-		PropertyModule.UnregisterCustomClassLayout(TEXT("MGAAttributeSetBlueprintBase"));
+		PropertyModule.UnregisterCustomClassLayout(TEXT("ModularAttributeSetBase"));
 	}
 
 	// Unregister asset type actions
@@ -179,7 +179,7 @@ void FMGAEditorModule::OnPostEngineInit()
 		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("GameplayAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataDetails::MakeInstance));
 		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("MGAGameplayClampedAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataClampedDetails::MakeInstance));
 		
-		PropertyModule.RegisterCustomClassLayout(TEXT("MGAAttributeSetBlueprintBase"), FOnGetDetailCustomizationInstance::CreateStatic(&FMGAAttributeSetDetails::MakeInstance));
+		PropertyModule.RegisterCustomClassLayout(TEXT("ModularAttributeSetBase"), FOnGetDetailCustomizationInstance::CreateStatic(&FMGAAttributeSetDetails::MakeInstance));
 
 		// Make the Base and CurrentValue editable in editor, without having to rely on heavy details customization
 		SetupGameplayAttributesPropertyFlags();

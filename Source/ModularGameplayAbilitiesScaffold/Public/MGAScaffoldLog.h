@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 
-MODULARGAMEPLAYABILITIESSCAFFOLD_API DECLARE_LOG_CATEGORY_EXTERN(LogBlueprintAttributesScaffold, Display, All);
+MODULARGAMEPLAYABILITIESSCAFFOLD_API DECLARE_LOG_CATEGORY_EXTERN(LogModularGameplayAbilitiesScaffold, Display, All);
 
 #define MGA_SCAFFOLD_LOG(Verbosity, Format, ...) \
 { \
-    UE_LOG(LogBlueprintAttributesScaffold, Verbosity, Format, ##__VA_ARGS__); \
+    UE_LOG(LogModularGameplayAbilitiesScaffold, Verbosity, Format, ##__VA_ARGS__); \
 }

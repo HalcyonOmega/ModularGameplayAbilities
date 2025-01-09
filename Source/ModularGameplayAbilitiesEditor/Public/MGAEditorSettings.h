@@ -7,7 +7,7 @@
 #include "MGAEditorSettings.generated.h"
 
 /**
- * Common Settings for Blueprint Attributes plugin
+ * Common Settings for Modular Gameplay Abilities plugin
  */
 UCLASS(config=Game, defaultconfig)
 class MODULARGAMEPLAYABILITIESEDITOR_API UMGAEditorSettings : public UDeveloperSettings
@@ -20,7 +20,7 @@ public:
 	 *
 	 * @see GetCategoryName
 	 */
-	static constexpr const TCHAR* PluginCategoryName = TEXT("Blueprint Attributes");
+	static constexpr const TCHAR* PluginCategoryName = TEXT("Modular Gameplay Abilities");
 
 	UMGAEditorSettings();
 

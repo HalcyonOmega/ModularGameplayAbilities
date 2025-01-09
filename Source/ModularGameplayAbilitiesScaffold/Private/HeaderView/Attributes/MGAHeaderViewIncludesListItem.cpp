@@ -2,7 +2,7 @@
 
 #include "HeaderView/Attributes/MGAHeaderViewIncludesListItem.h"
 
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "Algo/Unique.h"
 #include "Attributes/ModularAttributeSetBase.h"
 #include "Engine/Blueprint.h"

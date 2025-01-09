@@ -9,7 +9,7 @@
 #include "Slate/SMGASuggestedIDEWidget.h"
 #include "SlateOptMacros.h"
 #include "SourceCodeNavigation.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "AssetRegistry/AssetData.h"
 #include "Engine/Blueprint.h"
 #include "Misc/MessageDialog.h"
@@ -27,7 +27,7 @@ void SMGAAttributeSetWizard::Construct(const FArguments& InArgs, const FAssetDat
 	const FMargin PaddingAmount = FMargin(18.f);
 	const FMargin PaddingInternalAmount = FMargin(0.f, 0.f, 0.f, 0.f);
 
-	ViewModel = MakeShared<FMGAAttributeSetWizardViewModel>(UMGAAttributeSetBlueprintBase::StaticClass());
+	ViewModel = MakeShared<FMGAAttributeSetWizardViewModel>(UModularAttributeSetBase::StaticClass());
 	ViewModel->Initialize();
 	
 	AssetData = InAssetData;
@@ -282,7 +282,7 @@ void SMGAAttributeSetWizard::UpdateRequiredModuleDependenciesIfNeeded() const
 		const bool bHasClampedProperties = FMGAHeaderViewListItem::IsUsingClampedAttributeData(Blueprint->SkeletonGeneratedClass);
 		if (bHasClampedProperties)
 		{
-			ViewModel->AddRequiredModuleDependency(TEXT("BlueprintAttributes"), LOCTEXT("RequiredClampedStructModule", "Using FMGAClampedAttributeData struct"));
+			ViewModel->AddRequiredModuleDependency(TEXT("ModularGameplayAbilities"), LOCTEXT("RequiredClampedStructModule", "Using FMGAClampedAttributeData struct"));
 		}
 	}
 	

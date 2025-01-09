@@ -6,7 +6,7 @@
 #include "MGAScaffoldLog.h"
 #include "MGAScaffoldModule.h"
 #include "MGAScaffoldPreviewSettings.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "Engine/Blueprint.h"
 #include "Framework/Text/ITextDecorator.h"
 #include "Framework/Text/SlateTextRun.h"
@@ -174,8 +174,8 @@ bool FMGAHeaderViewListItem::IsSupportingClampedAttributeData(const TSharedPtr<F
 {
 	const FNewClassInfo ParentClassInfo = InViewModel->GetParentClassInfo();
 
-	// FMGAClampedAttributeData handling requires logic in PostGameplayEffectExecute handled by UMGAAttributeSetBlueprintBase
-	return ParentClassInfo.BaseClass && ParentClassInfo.BaseClass->IsChildOf(UMGAAttributeSetBlueprintBase::StaticClass());
+	// FMGAClampedAttributeData handling requires logic in PostGameplayEffectExecute handled by UModularAttributeSetBase
+	return ParentClassInfo.BaseClass && ParentClassInfo.BaseClass->IsChildOf(UModularAttributeSetBase::StaticClass());
 }
 
 FString FMGAHeaderViewListItem::GetClassNameToGenerate(const UBlueprint* InBlueprint, const FString& InDesiredClassName, const bool bIncludePrefix)

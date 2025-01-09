@@ -14,7 +14,7 @@ public:
 	// IAssetTypeActions Implementation
 	virtual FText GetName() const override
 	{
-		return NSLOCTEXT("AssetTypeActions", "MGAAssetTypeActions_AttributeSet", "Gameplay Blueprint Attribute Set");
+		return NSLOCTEXT("AssetTypeActions", "MGAAssetTypeActions_AttributeSet", "Modular Attribute Set");
 	}
 
 	virtual FColor GetTypeColor() const override

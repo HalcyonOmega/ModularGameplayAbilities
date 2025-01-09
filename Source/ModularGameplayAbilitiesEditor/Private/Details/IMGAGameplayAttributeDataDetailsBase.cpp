@@ -7,7 +7,7 @@
 #include "MGAEditorSettings.h"
 #include "IPropertyUtilities.h"
 #include "PropertyHandle.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 
 #define LOCTEXT_NAMESPACE "MGAGameplayAttributeDataDetails"
 
@@ -100,7 +100,7 @@ bool IMGAGameplayAttributeDataDetailsBase::IsValidOwnerClass(const UClass* InOwn
 		return false;
 	}
 
-	return InOwnerClass->IsChildOf(UMGAAttributeSetBlueprintBase::StaticClass());
+	return InOwnerClass->IsChildOf(UModularAttributeSetBase::StaticClass());
 }
 
 FText IMGAGameplayAttributeDataDetailsBase::GetHeaderBaseValueText() const

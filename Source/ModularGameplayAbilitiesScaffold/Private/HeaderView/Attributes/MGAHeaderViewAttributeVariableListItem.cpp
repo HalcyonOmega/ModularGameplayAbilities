@@ -3,7 +3,7 @@
 #include "HeaderView/Attributes/MGAHeaderViewAttributeVariableListItem.h"
 
 #include "AttributeSet.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "Engine/Blueprint.h"
 #include "Engine/UserDefinedStruct.h"
 #include "Framework/SlateDelegates.h"
@@ -25,7 +25,7 @@ FMGAHeaderViewAttributeVariableListItem::FMGAHeaderViewAttributeVariableListItem
 
 	const FString ClampedPropertyTypename = TEXT("FMGAClampedAttributeData");
 	
-	// FMGAClampedAttributeData handling requires logic in PostGameplayEffectExecute handled by UMGAAttributeSetBlueprintBase
+	// FMGAClampedAttributeData handling requires logic in PostGameplayEffectExecute handled by UModularAttributeSetBase
 	const bool bSupportsClampedAttributeData = IsSupportingClampedAttributeData(InViewModel);
 	const bool bIsClampedAttributeData = InVarProperty.GetCPPType() == ClampedPropertyTypename;
 
@@ -39,8 +39,8 @@ FMGAHeaderViewAttributeVariableListItem::FMGAHeaderViewAttributeVariableListItem
 			if (bIsClampedAttributeData && !bSupportsClampedAttributeData)
 			{
 				Comment += FString::Printf(TEXT("\n\n%s was a %s but handling of clamped properties requires"), *VarName, *ClampedPropertyTypename);
-				Comment += TEXT("\na UMGAAttributeSetBlueprintBase parent class.");
-				Comment += TEXT("\n\nPlease pick UMGAAttributeSetBlueprintBase for the parent class if you wish to generate the class");
+				Comment += TEXT("\na UModularAttributeSetBase parent class.");
+				Comment += TEXT("\n\nPlease pick UModularAttributeSetBase for the parent class if you wish to generate the class");
 				Comment += FString::Printf(TEXT("\nwith %s properties."), *ClampedPropertyTypename);
 				Comment += TEXT("\n\nOr you can ignore this comment and later change or remove it in the generated C++ class.");
 			}
@@ -66,7 +66,7 @@ FMGAHeaderViewAttributeVariableListItem::FMGAHeaderViewAttributeVariableListItem
 		if (bIsClampedAttributeData && !bSupportsClampedAttributeData)
 		{
 			// Convert FMGAClampedAttributeData to regular FGameplayAttributeData in case parent class is not
-			// of type UMGAAttributeSetBlueprintBase, whose PostGameplayEffectExecute (or PreAttributeChange / PreAttributeBaseChange
+			// of type UModularAttributeSetBase, whose PostGameplayEffectExecute (or PreAttributeChange / PreAttributeBaseChange
 			// if reworked)
 			Typename = TEXT("FGameplayAttributeData");
 		}

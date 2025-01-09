@@ -8,7 +8,7 @@
 FMGAEditorStyle::FMGAEditorStyle()
 	: FSlateStyleSet(TEXT("MGAEditorStyleSet"))
 {
-	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("BlueprintAttributes"));
+	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("ModularGameplayAbilities"));
 	check(Plugin.IsValid());
 
 	const FString PluginContentDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(Plugin->GetBaseDir(), TEXT("Resources/Icons")));

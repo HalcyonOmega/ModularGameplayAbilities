@@ -27,7 +27,7 @@ FMGAHeaderViewOnRepListItem::FMGAHeaderViewOnRepListItem(const TSharedPtr<FMGAAt
 	
 	const FString ClampedPropertyTypename = TEXT("FMGAClampedAttributeData");
 	
-	// FMGAClampedAttributeData handling requires logic in PostGameplayEffectExecute handled by UMGAAttributeSetBlueprintBase
+	// FMGAClampedAttributeData handling requires logic in PostGameplayEffectExecute handled by UModularAttributeSetBase
 	const bool bSupportsClampedAttributeData = IsSupportingClampedAttributeData(InViewModel);
 	const bool bIsClampedAttributeData = VarProperty.GetCPPType() == ClampedPropertyTypename;
 
@@ -41,7 +41,7 @@ FMGAHeaderViewOnRepListItem::FMGAHeaderViewOnRepListItem(const TSharedPtr<FMGAAt
 		if (bIsClampedAttributeData && !bSupportsClampedAttributeData)
 		{
 			// Convert FMGAClampedAttributeData to regular FGameplayAttributeData in case parent class is not
-			// of type UMGAAttributeSetBlueprintBase, whose PostGameplayEffectExecute (or PreAttributeChange / PreAttributeBaseChange
+			// of type UModularAttributeSetBase, whose PostGameplayEffectExecute (or PreAttributeChange / PreAttributeBaseChange
 			// if reworked)
 			Typename = TEXT("FGameplayAttributeData");
 		}

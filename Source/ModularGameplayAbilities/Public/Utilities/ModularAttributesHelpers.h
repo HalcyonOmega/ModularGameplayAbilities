@@ -25,7 +25,7 @@ public:
 	 *
 	 * @param ExecutionData	The data to get the debug string from.
 	 */
-	UFUNCTION(BlueprintPure, Category = "Blueprint Attributes")
+	UFUNCTION(BlueprintPure, Category = "ModularGameplayAbilities|Attribute")
 	static FString GetDebugStringFromExecutionData(const FMGAAttributeSetExecutionData& ExecutionData);
 
 	/**
@@ -34,18 +34,18 @@ public:
 	 * @param ExecutionData	The data to get the debug string from.
 	 * @param Separator String separator to use when joining the structure values (Default: "\n" - new line)
 	 */
-	UFUNCTION(BlueprintPure, Category = "Blueprint Attributes")
+	UFUNCTION(BlueprintPure, Category = "ModularGameplayAbilities|Attribute")
 	static FString GetDebugStringFromExecutionDataSeparator(const FMGAAttributeSetExecutionData& ExecutionData, const FString& Separator = TEXT(", "));
 
 	/** Returns the Attribute name */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Blueprint Attributes")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "ModularGameplayAbilities|Attribute")
 	static FString GetDebugStringFromAttribute(const FGameplayAttribute& Attribute);
 
 	/** Simple equality operator for gameplay attributes and string (for K2 Switch Node) */
-	UFUNCTION(BlueprintPure, Category = "Blueprint Attributes | PinOptions", meta = (BlueprintInternalUseOnly = "true"))
+	UFUNCTION(BlueprintPure, Category = "ModularGameplayAbilities|Attribute | PinOptions", meta = (BlueprintInternalUseOnly = "true"))
 	static bool NotEqual_GameplayAttributeGameplayAttribute(FGameplayAttribute A, FString B);
 
 	/** Returns the Attribute name as an FText */
-	UFUNCTION(BlueprintPure, Category = "Blueprint Attributes")
+	UFUNCTION(BlueprintPure, Category = "ModularGameplayAbilities|Attribute")
 	static FText GetAttributeDisplayNameText(const FGameplayAttribute& InAttribute);
 };

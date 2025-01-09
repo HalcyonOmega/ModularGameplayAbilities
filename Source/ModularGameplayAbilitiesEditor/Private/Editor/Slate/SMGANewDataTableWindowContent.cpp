@@ -16,7 +16,7 @@
 #include "SWarningOrErrorBox.h"
 #include "SlateOptMacros.h"
 #include "Attributes/ModularAttributeSetBase.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/Blueprint.h"
 #include "Fonts/FontMeasure.h"
@@ -84,7 +84,7 @@ void SMGANewDataTableWindowContent::Construct(const FArguments& InArgs, const TW
 		.SelectionMode(ESelectionMode::Single)
 		.AllowOverscroll(EAllowOverscroll::No);
 
-	const FString CSV = GenerateCSVFromBlueprintAttributes(Blueprint);
+	const FString CSV = GenerateCSVFromMGAAttributes(Blueprint);
 	MGA_EDITOR_LOG(Verbose, TEXT("CSV Result:\n\n%s"), *CSV)
 
 	UDataTable* DataTable = NewObject<UDataTable>(GetTransientPackage(), UDataTable::StaticClass());
@@ -286,7 +286,7 @@ SMGANewDataTableWindowContent::~SMGANewDataTableWindowContent()
 	}
 }
 
-FString SMGANewDataTableWindowContent::GenerateCSVFromBlueprintAttributes(const TWeakObjectPtr<UBlueprint>& InBlueprint)
+FString SMGANewDataTableWindowContent::GenerateCSVFromMGAAttributes(const TWeakObjectPtr<UBlueprint>& InBlueprint)
 {
 	check(InBlueprint.IsValid());
 	check(InBlueprint->SkeletonGeneratedClass);
@@ -300,7 +300,7 @@ FString SMGANewDataTableWindowContent::GenerateCSVFromBlueprintAttributes(const 
 
 	MGA_EDITOR_LOG(
 		Verbose,
-		TEXT("SMGANewDataTableWindowContent::GenerateCSVFromBlueprintAttributes Blueprint: %s, Properties: %d"),
+		TEXT("SMGANewDataTableWindowContent::GenerateCSVFromMGAAttributes Blueprint: %s, Properties: %d"),
 		*GetNameSafe(InBlueprint.Get()),
 		Properties.Num()
 	)
@@ -323,7 +323,7 @@ FString SMGANewDataTableWindowContent::GenerateCSVFromBlueprintAttributes(const 
 		}
 
 		FGameplayAttribute Attribute = FindFProperty<FProperty>(OwnerClass, Property->GetFName());
-		if (UMGAAttributeSetBlueprintBase::IsGameplayAttributeDataClampedProperty(Property))
+		if (UModularAttributeSetBase::IsGameplayAttributeDataClampedProperty(Property))
 		{
 			if (const FMGAClampedAttributeData* Clamped = static_cast<FMGAClampedAttributeData*>(Attribute.GetGameplayAttributeData(CDO)))
 			{
@@ -363,7 +363,7 @@ void SMGANewDataTableWindowContent::HandleBlueprintChanged(UBlueprint* InBluepri
 {
 	MGA_EDITOR_LOG(Verbose, TEXT("SMGANewDataTableWindowContent::HandleBlueprintChanged %s"), *GetNameSafe(InBlueprint))
 
-	const FString CSV = GenerateCSVFromBlueprintAttributes(InBlueprint);
+	const FString CSV = GenerateCSVFromMGAAttributes(InBlueprint);
 	MGA_EDITOR_LOG(Verbose, TEXT("CSV Result:\n\n%s"), *CSV)
 
 	UDataTable* DataTable = NewObject<UDataTable>(GetTransientPackage(), UDataTable::StaticClass());
@@ -674,7 +674,7 @@ FReply SMGANewDataTableWindowContent::OnConfirmClicked()
 	constexpr EObjectFlags Flags = RF_Public | RF_Standalone | RF_Transactional;
 	UDataTable* NewDataTable = NewObject<UDataTable>(Pkg, UDataTable::StaticClass(), FName(*ViewModel->GetAssetName()), Flags);
 	NewDataTable->RowStruct = FAttributeMetaData::StaticStruct();
-	NewDataTable->CreateTableFromCSVString(GenerateCSVFromBlueprintAttributes(Blueprint));
+	NewDataTable->CreateTableFromCSVString(GenerateCSVFromMGAAttributes(Blueprint));
 
 	// Close editor if existing asset already and is currently opened
 	const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
@@ -737,7 +737,8 @@ float SMGANewDataTableWindowContent::CalculateColumnWidth(const float InInitialV
 
 	for (const FDataTableEditorRowListViewDataPtr& RowData : AvailableRows)
 	{
-		FVector2D Measure;
+		FVector2D Measure(0.0f, 0.0f);
+		
 		if (InColumnType == ECalculateColumnType::RowNum)
 		{
 			Measure = FontMeasure->Measure(FString::FromInt(RowData->RowNum), CellTextStyle.Font);

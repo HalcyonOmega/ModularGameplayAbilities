@@ -101,7 +101,7 @@ FText FMGABlueprintEditor::GetToolkitToolTipText() const
 
 FString FMGABlueprintEditor::GetWorldCentricTabPrefix() const
 {
-	return TEXT("BlueprintAttributeSetEditor");
+	return TEXT("ModularAttributeSetEditor");
 }
 
 FLinearColor FMGABlueprintEditor::GetWorldCentricTabColorScale() const
@@ -146,13 +146,13 @@ void FMGABlueprintEditor::SetLastUsedVariableName(const FString& InLastUsedVaria
 
 void FMGABlueprintEditor::FillToolbar(FToolBarBuilder& InToolbarBuilder)
 {
-	InToolbarBuilder.BeginSection(TEXT("BlueprintAttributes"));
+	InToolbarBuilder.BeginSection(TEXT("ModularAttributes"));
 	{
 		InToolbarBuilder.AddComboButton(
 			FUIAction(),
 			FOnGetContent::CreateSP(this, &FMGABlueprintEditor::GenerateToolbarMenu),
 			LOCTEXT("ToolbarAddLabel", "Add Attribute"),
-			LOCTEXT("ToolbarAddToolTip", "Create a new Attribute"),
+			LOCTEXT("ToolbarAddToolTip", "Create a new Attribute."),
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Plus"),
 			false
 		);
@@ -161,7 +161,7 @@ void FMGABlueprintEditor::FillToolbar(FToolBarBuilder& InToolbarBuilder)
 			FUIAction(FExecuteAction::CreateSP(this, &FMGABlueprintEditor::CreateDataTableWindow)),
 			NAME_None,
 			LOCTEXT("ToolbarGenerateDataTableLabel", "Create DataTable"),
-			LOCTEXT("ToolbarGenerateDataTableTooltip", "Automatically generate a DataTable from this Blueprint Attributes properties"),
+			LOCTEXT("ToolbarGenerateDataTableTooltip", "Automatically generate a DataTable for this Modular Attribute Set."),
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "ClassIcon.DataTable")
 		);
 

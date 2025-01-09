@@ -59,7 +59,7 @@ struct FMGAHeaderViewListItem : public TSharedFromThis<FMGAHeaderViewListItem>
 	/** Returns whether passed in owning UStruct has properties of type Clamped Attributes (hence needing the include) */
 	static bool IsUsingClampedAttributeData(const UStruct* InStruct);
 	
-	/** Returns whether generated class is supporting handling of FMGAClampedAttributeData (child of UMGAAttributeSetBlueprintBase) */
+	/** Returns whether generated class is supporting handling of FMGAClampedAttributeData (child of UModularAttributeSetBase) */
 	static bool IsSupportingClampedAttributeData(const TSharedPtr<FMGAAttributeSetWizardViewModel>& InViewModel);
 	
 protected:

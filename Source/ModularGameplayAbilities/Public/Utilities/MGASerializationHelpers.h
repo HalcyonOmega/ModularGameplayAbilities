@@ -83,7 +83,7 @@ public:
 	 *					
 	 * @returns The input Binary Data modified along the way in case of saving
 	 */
-	UFUNCTION(BlueprintCallable, Category="Blueprint Attributes | Serialize")
+	UFUNCTION(BlueprintCallable, Category="ModularGameplayAbilities|Serialize")
 	static const TArray<uint8>& SerializeAbilitySystemComponent(
 		UPARAM(ref, DisplayName = "AbilitySystemComponent") UAbilitySystemComponent* InASC,
 		UPARAM(ref, DisplayName = "Data") TArray<uint8>& InData,

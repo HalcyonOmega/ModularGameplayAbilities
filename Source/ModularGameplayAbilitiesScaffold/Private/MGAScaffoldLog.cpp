@@ -3,4 +3,4 @@
 
 #include "MGAScaffoldLog.h"
 
-DEFINE_LOG_CATEGORY(LogBlueprintAttributesScaffold)
+DEFINE_LOG_CATEGORY(LogModularGameplayAbilitiesScaffold)

@@ -33,7 +33,7 @@ void UMGAEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	FMessageLogInitializationOptions InitOptions;
 	InitOptions.bShowFilters = true;
 	InitOptions.bShowPages = true;
-	MessageLogModule.RegisterLogListing(LogName, LOCTEXT("BlueprintAttributesLog", "Blueprint Attributes Log"), InitOptions);
+	MessageLogModule.RegisterLogListing(LogName, LOCTEXT("ModularGameplayAbilitiesLog", "Modular Attributes Log"), InitOptions);
 
 	FMGADelegates::OnVariableRenamed.AddUObject(this, &UMGAEditorSubsystem::HandleAttributeRename);
 	FMGADelegates::OnPreCompile.AddUObject(this, &UMGAEditorSubsystem::HandlePreCompile);
@@ -150,7 +150,7 @@ void UMGAEditorSubsystem::HandleAttributeRename(const FName& InPackageName, cons
 		const FText PageText = FText::Format(LOCTEXT("PageInfo", "Renamed attribute from {0} to {1}"), FText::FromName(OldPropertyName), FText::FromName(InNewPropertyName));
 		MessageLog.NewPage(FText::Format(LOCTEXT("NewPage", "{0} ({1})"), PageText, FText::AsDateTime(FDateTime::Now())));
 
-		const FText NotifyText = FText::Format(LOCTEXT("NotifyText", "Blueprint Attributes: {0} ({1} updates)"), PageText, FText::AsNumber(PendingMessages.Num()));
+		const FText NotifyText = FText::Format(LOCTEXT("NotifyText", "Modular Attributes: {0} ({1} updates)"), PageText, FText::AsNumber(PendingMessages.Num()));
 		MessageLog.Info(NotifyText);
 		MessageLog.AddMessages(PendingMessages);
 

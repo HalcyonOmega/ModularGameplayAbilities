@@ -62,7 +62,7 @@ public:
 	 *
 	 * @see GetCategoryName
 	 */
-	static constexpr const TCHAR* PluginCategoryName = TEXT("Blueprint Attributes");
+	static constexpr const TCHAR* PluginCategoryName = TEXT("Modular Gameplay Abilities");
 	
 	UMGAScaffoldPreviewSettings();
 

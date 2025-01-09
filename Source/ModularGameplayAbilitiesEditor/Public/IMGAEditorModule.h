@@ -55,6 +55,6 @@ public:
 	 */
 	virtual void PreloadAssetsByClass(UClass* InClass) const = 0;
 
-	/** Creates and returns a new window widget to create a FAttributeMetaData DataTable asset from a given Blueprint AttributeSet. */
+	/** Creates and returns a new window widget to create a FAttributeMetaData DataTable asset from a given ModularAttributeSet. */
 	virtual TSharedRef<SWindow> CreateDataTableWindow(const TWeakObjectPtr<UBlueprint>& InBlueprint, const FMGADataTableWindowArgs& InArgs) const = 0;
 };

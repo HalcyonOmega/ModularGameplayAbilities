@@ -59,7 +59,7 @@ protected:
 	 * Validation of the container / owner class of the Attribute Data property.
 	 *
 	 * Attribute Data definition should only happen within a UAttributeSet class and BP, and specifically a
-	 * UMGAAttributeSetBlueprintBase (which is a child class of UAttributeSet specific to this plugin).
+	 * UModularAttributeSetBase (which is a child class of UAttributeSet specific to this plugin).
 	 *
 	 * This returns false whenever the owner class is not a child of UAttributeSet (invalid owner in case of BP struct,
 	 * if defined in an Actor, Character or any other BP etc.)

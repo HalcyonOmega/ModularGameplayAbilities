@@ -58,7 +58,7 @@ public:
 	void Construct(const FArguments& InArgs, const TWeakObjectPtr<UBlueprint>& InBlueprint);
 	virtual ~SMGANewDataTableWindowContent() override;
 
-	static FString GenerateCSVFromBlueprintAttributes(const TWeakObjectPtr<UBlueprint>& InBlueprint);
+	static FString GenerateCSVFromMGAAttributes(const TWeakObjectPtr<UBlueprint>& InBlueprint);
 
 private:
 	/** Weak pointer to the UBlueprint we're basing the model / widget on */

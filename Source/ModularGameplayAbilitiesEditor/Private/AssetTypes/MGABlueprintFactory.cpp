@@ -4,7 +4,7 @@
 
 #include "BlueprintEditorSettings.h"
 #include "MGAEditorLog.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "Attributes/MGAAttributeSetBlueprint.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/MessageDialog.h"
@@ -16,7 +16,7 @@ UMGABlueprintFactory::UMGABlueprintFactory()
 	bCreateNew = true;
 	bEditAfterNew = true;
 	SupportedClass = UMGAAttributeSetBlueprint::StaticClass();
-	ParentClass = UMGAAttributeSetBlueprintBase::StaticClass();
+	ParentClass = UModularAttributeSetBase::StaticClass();
 }
 
 bool UMGABlueprintFactory::ConfigureProperties()
@@ -30,10 +30,10 @@ UObject* UMGABlueprintFactory::FactoryCreateNew(UClass* Class, UObject* InParent
 	check(Class->IsChildOf(UMGAAttributeSetBlueprint::StaticClass()));
 
 	// From standard factory create new, we omit FKismetEditorUtilities::CanCreateBlueprintOfClass to accomodate
-	// UMGAAttributeSetBlueprintBase being NotBlueprintable (we don't want to have this class picked from standard create BP)
+	// UModularAttributeSetBase being NotBlueprintable (we don't want to have this class picked from standard create BP)
 	//
 	// Class->GetBoolMetaDataHierarchical(FBlueprintMetadata::MD_IsBlueprintBase) would fail and return false, preventing creation
-	if (ParentClass == nullptr || !ParentClass->IsChildOf(UMGAAttributeSetBlueprintBase::StaticClass()))
+	if (ParentClass == nullptr || !ParentClass->IsChildOf(UModularAttributeSetBase::StaticClass()))
 	{
 		FFormatNamedArguments Args;
 		Args.Add(TEXT("ClassName"), ParentClass != nullptr ? FText::FromString(ParentClass->GetName()) : LOCTEXT("Null", "(null)"));
@@ -61,15 +61,15 @@ UObject* UMGABlueprintFactory::FactoryCreateNew(UClass* Class, UObject* InParent
 			UEdGraph* EventGraph = Blueprint->UbergraphPages[0];
 
 			// Those are the 3 non-const, no return values events. They appear in event graph
-			FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PostGameplayEffectExecute")), UMGAAttributeSetBlueprintBase::StaticClass(), NodePositionY);
-			FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PostAttributeChange")), UMGAAttributeSetBlueprintBase::StaticClass(), NodePositionY);
+			FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PostGameplayEffectExecute")), UModularAttributeSetBase::StaticClass(), NodePositionY);
+			FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PostAttributeChange")), UModularAttributeSetBase::StaticClass(), NodePositionY);
 
 			// Those are implemented as overridable functions, cause they're either const or return values
 			// And AddDefaultEventNode won't work for them (well the nodes are created but will complain on the first compilation if wired
-			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PreAttributeChange")), UMGAAttributeSetBlueprintBase::StaticClass(), NodePositionY);
-			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PreAttributeBaseChange")), UMGAAttributeSetBlueprintBase::StaticClass(), NodePositionY);
-			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PreAttributeChange")), UMGAAttributeSetBlueprintBase::StaticClass(), NodePositionY);
-			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PostAttributeBaseChange")), UMGAAttributeSetBlueprintBase::StaticClass(), NodePositionY);
+			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PreAttributeChange")), UModularAttributeSetBase::StaticClass(), NodePositionY);
+			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PreAttributeBaseChange")), UModularAttributeSetBase::StaticClass(), NodePositionY);
+			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PreAttributeChange")), UModularAttributeSetBase::StaticClass(), NodePositionY);
+			// FKismetEditorUtilities::AddDefaultEventNode(Blueprint, EventGraph, FName(TEXT("K2_PostAttributeBaseChange")), UModularAttributeSetBase::StaticClass(), NodePositionY);
 		}
 	}
 	

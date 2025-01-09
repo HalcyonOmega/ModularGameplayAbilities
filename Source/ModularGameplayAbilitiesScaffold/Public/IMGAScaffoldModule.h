@@ -31,7 +31,7 @@ public:
 	 */
 	static IMGAScaffoldModule& Get()
 	{
-		static const FName ModuleName = "BlueprintAttributesScaffold";
+		static const FName ModuleName = "ModularGameplayAbilitiesScaffold";
 		return FModuleManager::LoadModuleChecked<IMGAScaffoldModule>(ModuleName);
 	}
 
@@ -42,10 +42,10 @@ public:
 	 */
 	static bool IsAvailable()
 	{
-		static const FName ModuleName = "BlueprintAttributesScaffold";
+		static const FName ModuleName = "ModularGameplayAbilitiesScaffold";
 		return FModuleManager::Get().IsModuleLoaded(ModuleName);
 	}
 
-	/** Creates and returns a new wizard widget to create attribute C++ class from a Blueprint AttributeSet. */
+	/** Creates and returns a new wizard widget to create attribute C++ class from a ModularAttributeSet. */
 	virtual TSharedRef<SWindow> CreateAttributeWizard(const FAssetData& InAssetData, const FMGAAttributeWindowArgs& InArgs) const = 0;
 };

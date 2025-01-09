@@ -4,7 +4,7 @@
 
 #include "MGAScaffoldLog.h"
 #include "Attributes/ModularAttributeSetBase.h"
-#include "Attributes/MGAAttributeSetBlueprintBase.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "Engine/Blueprint.h"
 #include "LineEndings/MGALineEndings.h"
 #include "Models/MGAAttributeSetWizardViewModel.h"

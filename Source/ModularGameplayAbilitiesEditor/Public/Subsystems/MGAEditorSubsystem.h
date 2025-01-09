@@ -47,7 +47,7 @@ class MODULARGAMEPLAYABILITIESEDITOR_API UMGAEditorSubsystem : public UEditorSub
 
 public:
 	/** The message log category */
-	static constexpr const TCHAR* LogName = TEXT("BlueprintAttributesLog");
+	static constexpr const TCHAR* LogName = TEXT("ModularGameplayAbilitiesLog");
 
 	/** List of referencer handler registered via RegisterReferencerHandler() */
 	TMap<FName, TSharedPtr<IMGAAttributeReferencerHandler>> RegisteredHandlers;
