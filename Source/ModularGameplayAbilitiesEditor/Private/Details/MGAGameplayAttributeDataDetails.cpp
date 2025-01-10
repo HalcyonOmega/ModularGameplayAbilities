@@ -58,8 +58,7 @@ void FMGAGameplayAttributeDataDetails::CustomizeHeader(const TSharedRef<IPropert
 			.HAlign(HAlign_Fill)
 			.Padding(0.f, 0.f, 2.f, 0.f)
 			[
-				SNew(STextBlock)
-				.Text(this, &FMGAGameplayAttributeDataDetails::GetHeaderBaseValueText)
+				SNew(STextBlock).Text(this, &FMGAGameplayAttributeDataDetails::GetHeaderBaseValueText)
 			]
 		];
 }

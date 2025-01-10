@@ -1,6 +1,6 @@
 ﻿// Copyright 2022-2024 Mickael Daniel. All Rights Reserved.
 
-#include "ReferenceHandlers/MGAGameplayEffectReferencerHandler.h"
+#include "MGAGameplayEffectReferencerHandler.h"
 
 #include "MGAEditorLog.h"
 #include "GameplayEffect.h"

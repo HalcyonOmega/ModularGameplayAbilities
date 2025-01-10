@@ -33,8 +33,8 @@
 #define LOCTEXT_NAMESPACE "UModularAttributeSetBase"
 
 TMap<FString, FString> UModularAttributeSetBase::RepNotifierHandlerNames = {
-	{ TEXT("FGameplayAttributeData"), TEXT("HandleRepNotifyForGameplayAttributeData") },
-	{ TEXT("FMGAClampedAttributeData"), TEXT("HandleRepNotifyForGameplayClampedAttributeData") }
+	{ TEXT("FGameplayAttributeData"), TEXT("HandleRepNotifyForAttributeData") },
+	{ TEXT("FMGAClampedAttributeData"), TEXT("HandleRepNotifyForClampedAttributeData") }
 };
 
 FMGAAttributeSetExecutionData::FMGAAttributeSetExecutionData(const FGameplayEffectModCallbackData& InModCallbackData)
@@ -169,54 +169,6 @@ UModularAttributeSetBase::UModularAttributeSetBase(const FObjectInitializer& Obj
 {
 }
 
-void UModularAttributeSetBase::GetExecutionDataFromMod(const FGameplayEffectModCallbackData& Data, FMGAAttributeSetExecutionData& OutExecutionData)
-{
-	OutExecutionData.Context = Data.EffectSpec.GetContext();
-	OutExecutionData.SourceASC = OutExecutionData.Context.GetOriginalInstigatorAbilitySystemComponent();
-	OutExecutionData.SourceTags = *Data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
-	Data.EffectSpec.GetAllAssetTags(OutExecutionData.SpecAssetTags);
-
-	OutExecutionData.TargetActor = Data.Target.AbilityActorInfo->AvatarActor.IsValid() ? Data.Target.AbilityActorInfo->AvatarActor.Get() : nullptr;
-	OutExecutionData.TargetController = Data.Target.AbilityActorInfo->PlayerController.IsValid() ? Data.Target.AbilityActorInfo->PlayerController.Get() : nullptr;
-	OutExecutionData.TargetActor = Cast<APawn>(OutExecutionData.TargetActor);
-	
-	if (OutExecutionData.SourceASC && OutExecutionData.SourceASC->AbilityActorInfo.IsValid())
-	{
-		// Get the Source actor, which should be the damage causer (instigator)
-		if (OutExecutionData.SourceASC->AbilityActorInfo->AvatarActor.IsValid())
-		{
-			// Set the source actor based on context if it's set
-			if (OutExecutionData.Context.GetEffectCauser())
-			{
-				OutExecutionData.SourceActor = OutExecutionData.Context.GetEffectCauser();
-			}
-			else
-			{
-				OutExecutionData.SourceActor = OutExecutionData.SourceASC->AbilityActorInfo->AvatarActor.IsValid()
-					? OutExecutionData.SourceASC->AbilityActorInfo->AvatarActor.Get()
-					: nullptr;
-			}
-		}
-
-		OutExecutionData.SourceController = OutExecutionData.SourceASC->AbilityActorInfo->PlayerController.IsValid()
-			? OutExecutionData.SourceASC->AbilityActorInfo->PlayerController.Get()
-			: nullptr;
-		OutExecutionData.SourceActor = Cast<APawn>(OutExecutionData.SourceActor);
-	}
-
-	OutExecutionData.SourceObject = Data.EffectSpec.GetEffectContext().GetSourceObject();
-
-	// Compute the delta between old and new, if it is available
-	OutExecutionData.DeltaValue = 0.f;
-	if (Data.EvaluatedData.ModifierOp == EGameplayModOp::Type::Additive)
-	{
-		// If this was additive, store the raw delta value to be passed along later
-		OutExecutionData.DeltaValue = Data.EvaluatedData.Magnitude;
-	}
-}
-
-/**********/
-
 void UModularAttributeSetBase::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -295,14 +247,6 @@ void UModularAttributeSetBase::PostGameplayEffectExecute(const FGameplayEffectMo
 {
 	Super::PostGameplayEffectExecute(Data);
 
-	/* Original */
-	AActor* SourceActor = nullptr;
-	AActor* TargetActor = nullptr;
-	UModularAbilitySystemComponent* ASC = Cast<UModularAbilitySystemComponent>(GetOwningAbilitySystemComponent());
-	
-	ASC->GetSourceAndTargetFromContext<AActor>(Data, SourceActor, TargetActor);
-
-	/* Modular Attribute Blueprint Extended Logic */
 	const FMGAAttributeSetExecutionData ExecutionData(Data);
 
 	// Call BP event if implemented
@@ -566,7 +510,7 @@ void UModularAttributeSetBase::HandleRepNotifyForGameplayAttribute(const FName I
 	GetOwningAbilitySystemComponent()->SetBaseAttributeValueFromReplication(Attribute, *AttributeData, OldAttributeData);
 }
 
-void UModularAttributeSetBase::HandleRepNotifyForGameplayAttributeData(const FGameplayAttributeData& InAttribute)
+void UModularAttributeSetBase::HandleRepNotifyForAttributeData(const FGameplayAttributeData& InAttribute)
 {
 	FString AttributeName;
 	if (!GetAttributeDataPropertyName(InAttribute, AttributeName))
@@ -587,9 +531,9 @@ void UModularAttributeSetBase::HandleRepNotifyForGameplayAttributeData(const FGa
 	HandleRepNotifyForGameplayAttribute(FName(*AttributeName));
 }
 
-void UModularAttributeSetBase::HandleRepNotifyForGameplayClampedAttributeData(const FMGAClampedAttributeData& InAttribute)
+void UModularAttributeSetBase::HandleRepNotifyForClampedAttributeData(const FMGAClampedAttributeData& InAttribute)
 {
-	HandleRepNotifyForGameplayAttributeData(InAttribute);
+	HandleRepNotifyForAttributeData(InAttribute);
 }
 
 void UModularAttributeSetBase::BeginDestroy()
@@ -864,7 +808,7 @@ EDataValidationResult UModularAttributeSetBase::IsDataValidRepNotifies(TArray<FT
 				return RepNotifyHandlerFunctionName == Function->GetFunctionName().ToString() && IsNodeWiredToEntry(Function);
 			});
 
-			// No found "HandleRepNotifyForGameplayAttributeData" (or HandleRepNotifyForGameplayClampedAttributeData) K2 node or not wired to entry node, report as error
+			// No found "HandleRepNotifyForAttributeData" (or HandleRepNotifyForClampedAttributeData) K2 node or not wired to entry node, report as error
 			if (HandleFunctions.IsEmpty())
 			{
 				Result = EDataValidationResult::Invalid;
@@ -1107,7 +1051,7 @@ float UModularAttributeSetBase::GetClampedValueForClampedProperty(const FGamepla
 				MGA_LOG(
 					Warning,
 					TEXT("UModularAttributeSetBase::GetClampedValueForClampedProperty - "
-					"Clamping for Gameplay Clamped Attribute %s was disabled because Min and Max values are incorrrect"
+					"Clamping for Clamped Attribute %s was disabled because Min and Max values are incorrrect"
 					"(Min: %s, Max: %s)"),
 					*Attribute.GetName(),
 					*Clamped->MinValue.ToString(),

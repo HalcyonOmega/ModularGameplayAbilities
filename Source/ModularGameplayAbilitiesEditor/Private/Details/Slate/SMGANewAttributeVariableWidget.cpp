@@ -50,7 +50,8 @@ public:
 
 		if (const UScriptStruct* ScriptStruct = Cast<UScriptStruct>(CPPTypeObject))
 		{
-			if (ScriptStruct->IsChildOf(FGameplayAttributeData::StaticStruct()))
+			/* @Note: Originally FGameplayAttributeData. */
+			if (ScriptStruct->IsChildOf(FMGAAttributeData::StaticStruct()))
 			{
 				return true;
 			}
@@ -320,10 +321,10 @@ bool SMGANewAttributeVariableWidget::AddMemberVariable(UBlueprint* InBlueprint, 
 				UK2Node_CallFunction* Node = NewObject<UK2Node_CallFunction>(FuncGraph, UK2Node_CallFunction::StaticClass(), NAME_None, RF_Transactional);
 
 				// Figure out the property type, so that we know which member reference to build
-				FName MemberName = TEXT("HandleRepNotifyForGameplayAttributeData");
-				if (InPinType.PinSubCategoryObject.IsValid() && InPinType.PinSubCategoryObject->GetName() == TEXT("MGAGameplayClampedAttributeData"))
+				FName MemberName = TEXT("HandleRepNotifyForAttributeData");
+				if (InPinType.PinSubCategoryObject.IsValid() && InPinType.PinSubCategoryObject->GetName() == TEXT("MGAClampedAttributeData"))
 				{
-					MemberName = TEXT("HandleRepNotifyForGameplayClampedAttributeData");
+					MemberName = TEXT("HandleRepNotifyForClampedAttributeData");
 				}
 				
 				FMemberReference MemberReference;

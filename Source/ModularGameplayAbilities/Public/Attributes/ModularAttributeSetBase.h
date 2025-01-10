@@ -6,7 +6,6 @@
 #include "AttributeSet.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
-#include "GameplayEffectExtension.h"
 #include "GameplayEffectTypes.h"
 #include "Net/Core/PushModel/PushModelMacros.h"
 #include "Abilities/GameplayAbilityTypes.h"
@@ -91,6 +90,19 @@ struct FMGAAttributeSetExecutionData
 	FString ToString(const FString& InSeparator = TEXT(", ")) const;
 };
 
+/* Wrapper subclass of Gameplay Attribute Data to use for filtering. */
+USTRUCT(DisplayName="Modular Attribute Data")
+struct MODULARGAMEPLAYABILITIES_API FMGAAttributeData : public FGameplayAttributeData
+{
+	GENERATED_BODY()
+	FMGAAttributeData() = default;
+
+	FMGAAttributeData(const float DefaultValue)
+		: FGameplayAttributeData(DefaultValue)
+	{
+	}
+};
+
 /** Enumeration outlining the possible gameplay effect magnitude calculation policies. */
 UENUM()
 enum class EMGAAttributeClampingType : uint8
@@ -153,7 +165,7 @@ struct MODULARGAMEPLAYABILITIES_API FMGAAttributeClampDefinition
  * This one has clamping functionality built-in (compared to FGameplayAttributeData)
  */
 USTRUCT(DisplayName="Clamped Modular Attribute Data")
-struct MODULARGAMEPLAYABILITIES_API FMGAClampedAttributeData : public FGameplayAttributeData
+struct MODULARGAMEPLAYABILITIES_API FMGAClampedAttributeData : public FMGAAttributeData
 {
 	GENERATED_BODY()
 
@@ -166,7 +178,7 @@ struct MODULARGAMEPLAYABILITIES_API FMGAClampedAttributeData : public FGameplayA
 	FMGAClampedAttributeData() = default;
 
 	FMGAClampedAttributeData(const float DefaultValue)
-		: FGameplayAttributeData(DefaultValue)
+		: FMGAAttributeData(DefaultValue)
 	{
 	}
 };
@@ -211,16 +223,6 @@ public:
 	//~ End customization stuff
 #endif
 
-protected:
-	/**
-	 * Fills out FMGAAttributeSetExecutionData structure based on provided data.
-	 *
-	 * @param Data The gameplay effect mod callback data available in attribute sets' PostGameplayEffectExecute
-	 * @param OutExecutionData Returned structure with various information extracted from Data (Source / Target Actor, Controllers, etc.)
-	 */
-	virtual void GetExecutionDataFromMod(const FGameplayEffectModCallbackData& Data, OUT FMGAAttributeSetExecutionData& OutExecutionData);
-
-public:
 	/**
 	 * Initializes attribute data from a meta DataTable.
 	 *
@@ -429,10 +431,10 @@ public:
 	 * Blueprint member Attribute variable for the rep notify you're implementing.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute")
-	void HandleRepNotifyForGameplayAttributeData(const FGameplayAttributeData& InAttribute);
+	void HandleRepNotifyForAttributeData(const FGameplayAttributeData& InAttribute);
 	
 	/**
-	 * To be called from Blueprint rep notifies for a given (Clamped) Gameplay Attribute Data member variable.
+	 * Call in Blueprint Rep Notifies for Clamped Gameplay Attribute Data member variable.
 	 *
 	 * Meant to provide the same prediction capabilities of GAMEPLAYATTRIBUTE_REPNOTIFY(UMyAttributeSet, Attribute, OldAttribute) macro that is usually
 	 * called from within a C++ AttributeSet rep notify handler.
@@ -441,7 +443,7 @@ public:
 	 * Blueprint member Attribute variable for the rep notify you're implementing.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Attribute")
-	void HandleRepNotifyForGameplayClampedAttributeData(const FMGAClampedAttributeData& InAttribute);
+	void HandleRepNotifyForClampedAttributeData(const FMGAClampedAttributeData& InAttribute);
 
 	//~ Begin UObject interface
 	virtual void BeginDestroy() override;

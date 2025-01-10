@@ -16,7 +16,7 @@
 #include "Logging/MessageLog.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Misc/UObjectToken.h"
-#include "ModularGameplayAbilitiesEditor/Public/ReferenceHandlers/MGAGameplayEffectReferencerHandler.h"
+#include "ReferencerHandlers/MGAGameplayEffectReferencerHandler.h"
 #include "Subsystems/AssetEditorSubsystem.h"
 #include "Toolkits/AssetEditorToolkit.h"
 #include "Toolkits/IToolkit.h"

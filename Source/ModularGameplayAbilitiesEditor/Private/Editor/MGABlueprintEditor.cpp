@@ -9,6 +9,7 @@
 #include "IMGAEditorModule.h"
 #include "IMGAScaffoldModule.h"
 #include "Attributes/MGAAttributeSetBlueprint.h"
+#include "Attributes/ModularAttributeSetBase.h"
 #include "Details/Slate/MGANewAttributeViewModel.h"
 #include "Details/Slate/SMGANewAttributeVariableWidget.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
@@ -151,7 +152,7 @@ void FMGABlueprintEditor::FillToolbar(FToolBarBuilder& InToolbarBuilder)
 		InToolbarBuilder.AddComboButton(
 			FUIAction(),
 			FOnGetContent::CreateSP(this, &FMGABlueprintEditor::GenerateToolbarMenu),
-			LOCTEXT("ToolbarAddLabel", "Add Attribute"),
+			LOCTEXT("ToolbarAddLabel", "New Attribute"),
 			LOCTEXT("ToolbarAddToolTip", "Create a new Attribute."),
 			FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Plus"),
 			false
@@ -192,7 +193,7 @@ TSharedRef<SWidget> FMGABlueprintEditor::GenerateToolbarMenu()
 	FEdGraphPinType PinType;
 	PinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
 	PinType.PinSubCategory = NAME_None;
-	PinType.PinSubCategoryObject = LastPinSubCategoryObject.IsValid() ? LastPinSubCategoryObject.Get() : FGameplayAttributeData::StaticStruct();
+	PinType.PinSubCategoryObject = LastPinSubCategoryObject.IsValid() ? LastPinSubCategoryObject.Get() : FMGAAttributeData::StaticStruct();
 	ViewModel->SetPinType(PinType);
 
 	TSharedRef<SMGANewAttributeVariableWidget> Widget = SNew(SMGANewAttributeVariableWidget, ViewModel)

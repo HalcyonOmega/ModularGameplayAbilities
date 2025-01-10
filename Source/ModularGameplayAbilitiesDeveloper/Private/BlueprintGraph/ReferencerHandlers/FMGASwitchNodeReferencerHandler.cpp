@@ -1,6 +1,6 @@
 ﻿// Copyright 2022-2024 Mickael Daniel. All Rights Reserved.
 
-#include "BlueprintGraph/ReferenceHandlers/FMGASwitchNodeReferencerHandler.h"
+#include "ModularGameplayAbilitiesDeveloper/Public/BlueprintGraph/ReferencerHandlers/FMGASwitchNodeReferencerHandler.h"
 
 #include "BlueprintGraph/MGAK2Node_SwitchGameplayAttribute.h"
 #include "EdGraph/EdGraph.h"

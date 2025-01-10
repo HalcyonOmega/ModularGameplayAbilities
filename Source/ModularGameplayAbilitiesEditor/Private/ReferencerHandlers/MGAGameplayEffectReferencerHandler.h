@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Misc/EngineVersionComparison.h"
-#include "ModularGameplayAbilitiesEditor/Public/ReferenceHandlers/IMGAAttributeReferencerHandler.h"
+#include "ModularGameplayAbilitiesEditor/Public/ReferencerHandlers/IMGAAttributeReferencerHandler.h"
 #include "UObject/WeakFieldPtr.h"
 
 #if UE_VERSION_NEWER_THAN(5, 2, -1)

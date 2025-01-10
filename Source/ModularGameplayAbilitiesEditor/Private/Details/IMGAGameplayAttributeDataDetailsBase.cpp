@@ -111,7 +111,7 @@ FText IMGAGameplayAttributeDataDetailsBase::GetHeaderBaseValueText() const
 	// BP Struct ...
 	if (!AttributeData)
 	{
-		return LOCTEXT("Invalid", "Invalid Attribute Data owner (BP struct are not supported)");
+		return LOCTEXT("Invalid", "Invalid Attribute Data!");
 	}
 	
 	return FText::Format(
