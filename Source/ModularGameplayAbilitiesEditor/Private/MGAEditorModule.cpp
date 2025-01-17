@@ -58,7 +58,7 @@ void FMGAEditorModule::ShutdownModule()
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>(TEXT("PropertyEditor"));
 		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("GameplayAttribute"));
-		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("GameplayAttributeData"));
+		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("MGAAttributeData"));
 		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("MGAClampedAttributeData"));
 
 		PropertyModule.UnregisterCustomClassLayout(TEXT("ModularAttributeSetBase"));
@@ -176,7 +176,7 @@ void FMGAEditorModule::OnPostEngineInit()
 
 		// Note: We still need a customization, namely because I'd like to keep the customization for the header and
 		// support for compact view, but base / current value handling can now be removed
-		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("GameplayAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataDetails::MakeInstance));
+		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("MGAAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataDetails::MakeInstance));
 		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("MGAClampedAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataClampedDetails::MakeInstance));
 		
 		PropertyModule.RegisterCustomClassLayout(TEXT("ModularAttributeSetBase"), FOnGetDetailCustomizationInstance::CreateStatic(&FMGAAttributeSetDetails::MakeInstance));

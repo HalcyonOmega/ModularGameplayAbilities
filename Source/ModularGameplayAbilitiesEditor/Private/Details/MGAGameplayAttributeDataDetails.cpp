@@ -34,6 +34,7 @@ void FMGAGameplayAttributeDataDetails::CustomizeHeader(const TSharedRef<IPropert
 	// Sets up PropertyUtilities, PropertyBeingCustomized, AttributeSetBeingCustomized, BlueprintBeingCustomized, AttributeDataBeingCustomized
 	InitializeFromStructHandle(InStructPropertyHandle, InStructCustomizationUtils);
 
+	
 	// Check if we want to display details in compact mode
 	if (IsCompactView())
 	{

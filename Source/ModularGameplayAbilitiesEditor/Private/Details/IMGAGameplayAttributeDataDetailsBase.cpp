@@ -113,9 +113,9 @@ FText IMGAGameplayAttributeDataDetailsBase::GetHeaderBaseValueText() const
 	{
 		return LOCTEXT("Invalid", "Invalid Attribute Data!");
 	}
-	
+
 	return FText::Format(
-		UMGAEditorSettings::Get().HeaderFormatText,
+		UMGAEditorSettings::Get().HeaderFormatText,  
 		FText::FromString(FString::Printf(TEXT("%.2f"), AttributeData->GetBaseValue())),
 		FText::FromString(FString::Printf(TEXT("%.2f"), AttributeData->GetCurrentValue()))
 	);

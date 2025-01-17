@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-MODULARGAMEPLAYABILITIESEDITOR_API DECLARE_LOG_CATEGORY_EXTERN(LogModularGameplayAbilitiesEditor, Display, All);
+MODULARGAMEPLAYABILITIESEDITOR_API DECLARE_LOG_CATEGORY_EXTERN(LogModularGameplayAbilitiesEditor, Log, All);
 
 #define MGA_EDITOR_LOG(Verbosity, Format, ...) \
 { \
