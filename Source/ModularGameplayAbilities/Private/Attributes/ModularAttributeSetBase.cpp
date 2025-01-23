@@ -517,7 +517,7 @@ void UModularAttributeSetBase::HandleRepNotifyForAttributeData(const FGameplayAt
 	{
 		const FString ErrorMessage = FString::Printf(
 			TEXT(
-				"Unable to determine AttributeName - AttribtueSet: %s - "
+				"Unable to determine AttributeName - AttributeSet: %s - "
 				"This shouldn't happen and will prevent proper predictive attribute replication handling."
 			),
 			*GetName()

@@ -228,7 +228,7 @@ void SMGAGameplayAttributeListWidget::Construct(const FArguments& InArgs)
 		.AutoHeight()
 		[
 			SAssignNew(SearchBoxPtr, SSearchBox)
-			.HintText(NSLOCTEXT("Abilities", "SearchBoxHint", "Search Attributes (BP)"))
+			.HintText(NSLOCTEXT("Abilities", "SearchBoxHint", "Search Attributes (Include BP)"))
 			.OnTextChanged(this, &SMGAGameplayAttributeListWidget::OnFilterTextChanged)
 			.DelayChangeNotificationsWhileTyping(true)
 		]

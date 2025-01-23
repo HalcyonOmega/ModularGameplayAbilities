@@ -170,7 +170,12 @@ bool FMGAUtilities::IsValidCPPType(const FString& InCPPType)
 	{
 		return true;
 	}
-
+	
+	if (InCPPType == TEXT("FMGAAttributeData"))
+	{
+		return true;
+	}
+	
 	if (InCPPType == TEXT("FMGAClampedAttributeData"))
 	{
 		return true;

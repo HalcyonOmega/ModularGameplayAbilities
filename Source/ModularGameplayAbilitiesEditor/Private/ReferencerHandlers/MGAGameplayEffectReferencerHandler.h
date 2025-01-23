@@ -6,12 +6,7 @@
 #include "Misc/EngineVersionComparison.h"
 #include "ModularGameplayAbilitiesEditor/Public/ReferencerHandlers/IMGAAttributeReferencerHandler.h"
 #include "UObject/WeakFieldPtr.h"
-
-#if UE_VERSION_NEWER_THAN(5, 2, -1)
 #include "AssetRegistry/AssetIdentifier.h"
-#else
-#include "AssetRegistry/AssetData.h"
-#endif
 
 class UGameplayEffect;
 struct FAttributeBasedFloat;

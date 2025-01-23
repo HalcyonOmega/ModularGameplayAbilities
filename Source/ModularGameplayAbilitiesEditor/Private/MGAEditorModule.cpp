@@ -58,6 +58,7 @@ void FMGAEditorModule::ShutdownModule()
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>(TEXT("PropertyEditor"));
 		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("GameplayAttribute"));
+		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("GameplayAttributeData"));
 		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("MGAAttributeData"));
 		PropertyModule.UnregisterCustomPropertyTypeLayout(TEXT("MGAClampedAttributeData"));
 
@@ -147,8 +148,8 @@ void FMGAEditorModule::ExecuteShowGameplayAttributeReferencesWindow(const TArray
 	{
 		FSlateApplication::Get().AddWindow(AttributeListReferenceViewerWindow.ToSharedRef());
 	}
-	
-	check (AttributeListReferenceViewerWidget.IsValid());
+
+	check(AttributeListReferenceViewerWidget.IsValid());
 
 	// Set focus to the search box on creation
 	FSlateApplication::Get().SetKeyboardFocus(AttributeListReferenceViewerWidget->GetWidgetToFocusOnOpen());
@@ -176,6 +177,7 @@ void FMGAEditorModule::OnPostEngineInit()
 
 		// Note: We still need a customization, namely because I'd like to keep the customization for the header and
 		// support for compact view, but base / current value handling can now be removed
+		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("GameplayAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataDetails::MakeInstance));
 		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("MGAAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataDetails::MakeInstance));
 		PropertyModule.RegisterCustomPropertyTypeLayout(TEXT("MGAClampedAttributeData"), FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FMGAGameplayAttributeDataClampedDetails::MakeInstance));
 		
@@ -228,11 +230,7 @@ void FMGAEditorModule::PreloadAssetsByClass(UClass* InClass) const
 	const IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
 
 	TArray<FAssetData> Assets;
-#if UE_VERSION_NEWER_THAN(5, 1, -1)
 	AssetRegistry.GetAssetsByClass(InClass->GetClassPathName(), Assets, true);
-#else
-	AssetRegistry.GetAssetsByClass(InClass->GetFName(), Assets, true);
-#endif
 
 	MGA_EDITOR_LOG(Verbose, TEXT("FMGAEditorModule::PreloadAssetsByClass - Preloading %d assets with class %s"), Assets.Num(), *GetNameSafe(InClass))
 	for (const FAssetData& Asset : Assets)

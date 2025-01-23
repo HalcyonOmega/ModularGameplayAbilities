@@ -13,12 +13,7 @@
 #include "Utilities/MGAUtilities.h"
 #include "Widgets/Input/SComboBox.h"
 #include "Widgets/Input/SSearchBox.h"
-
-#if UE_VERSION_NEWER_THAN(5, 2, -1)
 #include "AssetRegistry/AssetIdentifier.h"
-#else
-#include "AssetRegistry/AssetData.h"
-#endif
 
 #define LOCTEXT_NAMESPACE "MGAAttributeListReferenceViewer"
 
