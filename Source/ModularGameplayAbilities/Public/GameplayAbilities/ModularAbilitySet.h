@@ -19,12 +19,18 @@
 USTRUCT(BlueprintType)
 struct MODULARGAMEPLAYABILITIES_API FModularAbilitySet_AttributeSet
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
+	FModularAbilitySet_AttributeSet()
+		:DefaultStartingTable(nullptr)
+	{ }
 public:
 	// Gameplay effect to grant.
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UAttributeSet> AttributeSet;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UDataTable> DefaultStartingTable;
 
 };
 

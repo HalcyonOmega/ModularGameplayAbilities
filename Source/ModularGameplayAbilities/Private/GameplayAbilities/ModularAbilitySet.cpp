@@ -51,9 +51,11 @@ void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UModularAbilitySys
 			ModularASC->RemoveActiveGameplayEffect(Handle);
 		}
 	}
-
+	
 	for (UAttributeSet* Set : GrantedAttributeSets)
 	{
+		//ModularASC->UnbindAttributeDelegates(Set);
+		
 		ModularASC->RemoveSpawnedAttribute(Set);
 	}
 
@@ -132,9 +134,17 @@ void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* Mod
 			UE_LOG(LogModularGameplayAbilities, Error, TEXT("GrantedAttributes[%d] on ability set [%s] is not valid"), SetIndex, *GetNameSafe(this));
 			continue;
 		}
-
-		UAttributeSet* NewSet = NewObject<UAttributeSet>(ModularASC->GetOwner(), SetToGrant.AttributeSet);
+		/*
+		UAttributeSet* NewSet = const_cast<UAttributeSet*>(ModularASC->GetOrCreateAttributeSetSubobject(SetToGrant.AttributeSet));
+		NewSet->InitFromMetaDataTable(SetToGrant.DefaultStartingTable);
+		*/
+		//ModularASC->GetAvatarActor()->CreateDefaultSubobject<SetToGrant.AttributeSet>(FName(GetNameSafe(SetToGrant.AttributeSet)));
+		
+		UAttributeSet* NewSet = NewObject<UAttributeSet>(ModularASC->GetAvatarActor(), SetToGrant.AttributeSet);
 		ModularASC->AddAttributeSetSubobject(NewSet);
+		
+		//const UAttributeSet* NewSet = ModularASC->InitStats(SetToGrant.AttributeSet->GetClass(), SetToGrant.DefaultStartingTable);
+		//ModularASC->BindAttributeDelegates(NewSet);
 
 		if (OutGrantedHandles)
 		{

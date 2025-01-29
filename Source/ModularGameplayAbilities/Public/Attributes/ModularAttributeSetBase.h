@@ -451,11 +451,7 @@ public:
 	virtual void PreNetReceive() override;
 	
 #if WITH_EDITOR
-#if UE_VERSION_NEWER_THAN(5, 3, -1)
 	virtual EDataValidationResult IsDataValid(class FDataValidationContext& Context) const override;
-#else
-	virtual EDataValidationResult IsDataValid(TArray<FText>& ValidationErrors) override;
-#endif
 	
 	//~ End UObject interface
 
