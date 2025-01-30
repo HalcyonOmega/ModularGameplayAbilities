@@ -46,4 +46,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "ModularGameplayAbilities|Exec Calc")
 	static const FGameplayEffectCustomExecutionOutput& AddOutputModifier(UPARAM(ref) FGameplayEffectCustomExecutionOutput& InExecutionOutput, const FGameplayAttribute InAttribute, const EGameplayModOp::Type InModOp, const float InMagnitude);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "ModularGameplayAbilities|Exec Calc")
+	static const TMap<FGameplayTag, float> GetSetByCallerTagMagnitudes(const FGameplayEffectCustomExecutionParameters& InExecutionParams);
 };

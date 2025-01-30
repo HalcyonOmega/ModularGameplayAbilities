@@ -93,3 +93,9 @@ const FGameplayEffectCustomExecutionOutput& UModularEffectExecutionHelpers::AddO
 	InExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(InAttribute, InModOp, InMagnitude));
 	return MoveTemp(InExecutionOutput);
 }
+
+const TMap<FGameplayTag, float> UModularEffectExecutionHelpers::GetSetByCallerTagMagnitudes(
+	const FGameplayEffectCustomExecutionParameters& InExecutionParams)
+{
+	return InExecutionParams.GetOwningSpec().SetByCallerTagMagnitudes;
+}

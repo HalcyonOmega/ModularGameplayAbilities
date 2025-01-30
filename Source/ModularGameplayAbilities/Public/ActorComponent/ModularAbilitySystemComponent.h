@@ -129,11 +129,6 @@ public:
 	/* Gets the level of gameplay effect based on handle. */
 	UFUNCTION(BlueprintCallable)
 	int32 GetActiveGameplayEffectLevel(FActiveGameplayEffectHandle ActiveHandle);
-
-	/* @TODO - Remove these two methods */
-	void BindAttributeDelegates(const UAttributeSet* Set);
-	void UnbindAttributeDelegates(const UAttributeSet* Set);
-
 	
 	/* State Delegates */
 	
@@ -363,9 +358,6 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "ModularAbilitySystem|Attribute")
 	virtual void AdjustAttributeForMaxChange(UPARAM(ref) UAttributeSet* AttributeSet, const FGameplayAttribute AffectedAttributeProperty, const FGameplayAttribute MaxAttribute, float NewMaxValue);
-
-	/* Indirect override of protected method in parent AbilitySystemComponent class, which enables similar functionality within ModularAbilitySet */
-	const UAttributeSet* GetOrCreateAttributeSetSubobject(TSubclassOf<UAttributeSet> AttributeClass);
 	
 protected:
 

@@ -9,7 +9,7 @@
 #include "MGAK2Node_SwitchGameplayAttribute.generated.h"
 
 /**
- * Switch Switch on Gameplay Attribute node
+ * Switch on Gameplay Attribute node
  */
 UCLASS(MinimalAPI)
 class UMGAK2Node_SwitchGameplayAttribute : public UK2Node_Switch
@@ -51,9 +51,5 @@ protected:
 	virtual void CreateSelectionPin() override;
 	virtual void CreateCasePins() override;
 	virtual void RemovePin(UEdGraphPin* TargetPin) override;
-
-private:
-	/** Returns whether GAS Companion Plugin is currently enabled for the project */
-	static bool IsGasCompanionPluginEnabled();
 };
 

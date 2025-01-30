@@ -79,17 +79,6 @@ FText UMGAK2Node_SwitchGameplayAttribute::GetTooltipText() const
 
 void UMGAK2Node_SwitchGameplayAttribute::GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const
 {
-	// Is GAS Companion currently enabled ?
-	//
-	// If so, early return here, this will prevent addition of this K2_Node in context menu
-	//
-	// GAS Companion has already a Switch On Gameplay Attribute node. We only want to expose the present class
-	// if GAS Companion is not available (and prevent duplication of this node in context menu)
-	if (IsGasCompanionPluginEnabled())
-	{
-		return;
-	}
-
 	// actions get registered under specific object-keys; the idea is that
 	// actions might have to be updated (or deleted) if their object-key is
 	// mutated (or removed)... here we use the node's class (so if the node
@@ -221,15 +210,4 @@ void UMGAK2Node_SwitchGameplayAttribute::RemovePin(UEdGraphPin* TargetPin)
 		}
 		PinNames.RemoveAt(Index);
 	}
-}
-
-/* @TODO: Look Cleanup Here */
-bool UMGAK2Node_SwitchGameplayAttribute::IsGasCompanionPluginEnabled()
-{
-	if (const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("GASCompanion")))
-	{
-		return Plugin->IsEnabled();
-	}
-	
-	return false;
 }

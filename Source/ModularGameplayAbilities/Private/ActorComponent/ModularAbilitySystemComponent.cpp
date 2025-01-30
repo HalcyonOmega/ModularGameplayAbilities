@@ -1061,29 +1061,6 @@ int32 UModularAbilitySystemComponent::GetActiveGameplayEffectLevel(FActiveGamepl
 	}
 	return int32(-1);
 }
-
-void UModularAbilitySystemComponent::BindAttributeDelegates(const UAttributeSet* Set)
-{
-	TArray<FGameplayAttribute> Attributes;
-	UAttributeSet::GetAttributesFromSetClass(Set->GetClass(), Attributes);
-	
-	for (const FGameplayAttribute Attribute : Attributes)
-	{
-		GetGameplayAttributeValueChangeDelegate(Attribute).AddUObject(this, &UModularAbilitySystemComponent::HandleOnAttributeChange);
-	}
-}
-
-void UModularAbilitySystemComponent::UnbindAttributeDelegates(const UAttributeSet* Set)
-{
-	TArray<FGameplayAttribute> Attributes;
-	UAttributeSet::GetAttributesFromSetClass(Set->GetClass(), Attributes);
-	
-	for (const FGameplayAttribute Attribute : Attributes)
-	{
-		GetGameplayAttributeValueChangeDelegate(Attribute).RemoveAll(this);
-	}
-}
-
 void UModularAbilitySystemComponent::GrantStartupEffects()
 {
 	if (!IsOwnerActorAuthoritative())
@@ -1117,22 +1094,4 @@ const FGameplayTagContainer& UModularAbilitySystemComponent::GetSourceTagsFromCo
 	const FGameplayEffectModCallbackData& Data)
 {
 	return *Data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
-}
-
-const UAttributeSet* UModularAbilitySystemComponent::GetOrCreateAttributeSetSubobject(TSubclassOf<UAttributeSet> AttributeClass)
-{
-	AActor* OwningActor = GetOwner();
-	const UAttributeSet* MyAttributes = nullptr;
-	if (OwningActor && AttributeClass)
-	{
-		MyAttributes = GetAttributeSubobject(AttributeClass);
-		if (!MyAttributes)
-		{
-			UAttributeSet* Attributes = NewObject<UAttributeSet>(OwningActor, AttributeClass);
-			AddSpawnedAttribute(Attributes);
-			MyAttributes = Attributes;
-		}
-	}
-
-	return MyAttributes;
 }
