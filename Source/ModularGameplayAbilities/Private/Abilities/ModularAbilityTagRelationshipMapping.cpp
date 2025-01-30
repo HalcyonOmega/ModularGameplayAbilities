@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "GameplayAbilities/ModularAbilityTagRelationshipMapping.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularAbilityTagRelationshipMapping.h"
 
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilityTagRelationshipMapping)

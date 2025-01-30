@@ -2,13 +2,18 @@
 
 #pragma once
 
-#include "GameplayAbilities/ModularGameplayAbility.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffectExtension.h"
 #include "NativeGameplayTags.h"
 
 #include "ModularAbilitySystemComponent.generated.h"
 
+struct FMGAMappedAbility;
+struct FMGAGameFeatureAbilityMapping;
+struct FMGAAttributeSetDefinition;
+class UMGAAbilitySet;
+struct FMGAAbilitySetHandle;
 class AActor;
 class UGameplayAbility;
 class UModularAbilityTagRelationshipMapping;
@@ -41,6 +46,7 @@ struct FModularGameplayEffectExecuteData
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FModularOnInitAbilityActorInfo);
 
 /* Ability Delegates */
+DECLARE_MULTICAST_DELEGATE_OneParam(FModularOnGiveAbility, FGameplayAbilitySpec&);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FModularOnAbilityActivate, const UGameplayAbility*, Ability);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FModularOnAbilityCommit, UGameplayAbility*, Ability);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FModularOnAbilityEnd, const UGameplayAbility*, Ability);
@@ -147,9 +153,36 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="ModularAbilitySystem|Actor")
 	FModularOnInitAbilityActorInfo OnInitAbilityActorInfo;
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+	/**
+	 * Specifically set abilities to persist across deaths / respawns or possessions.
+	 *
+	 * When this is set to false, abilities will only be granted the first time InitAbilityActor is called. This is the default
+	 * behavior for ASC living on Player States (GSCModularPlayerState specifically).
+	 *
+	 * Do not set it true for ASC living on Player States if you're using ability input binding. Only ASC living on Pawns supports this.
+	 * 
+	 * (Default is true)
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "ModularAbilitySystem|Ability")
+	bool bResetAbilitiesOnSpawn = true;
 
-	
+	/**
+	 * Specifically set attributes to persist across deaths / respawns or possessions.
+	 *
+	 * When this is set to false, attributes are only granted the first time InitAbilityActor is called. This is the default
+	 * behavior for ASC living on Player States (GSCModularPlayerState specifically).
+	 *
+	 * Set it (or leave it) to true if you want attribute values to be re-initialized to their default values.
+	 * 
+	 * (Default is true)
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "ModularAbilitySystem|Attribute")
+	bool bResetAttributesOnSpawn = true;
+
 	/* Ability Delegates */
+	
+	/* Delegate invoked OnGiveAbility (when an ability is granted and available) */
+	FModularOnGiveAbility OnGiveAbilityDelegate;
 	
 	/* Called when an ability is activated for the owner actor. */
 	UPROPERTY(BlueprintAssignable, Category = "ModularAbilitySystem|Ability")
@@ -296,7 +329,42 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "ModularAbilitySystem|Ability")
 	virtual void GrantAbility(TSubclassOf<UGameplayAbility> Ability, int32 Level = 1);
+
+	/*
+	 * Grants a given Ability Set to the ASC, adding defined Abilities, Attributes, Effects and Owned Tags.
+	 *
+	 * This method is meant to run on both Authority (must be called from server), and on Client if you'd like to setup binding as well (Important to call on client too for Owned Tags)
+	 *
+	 * During Pawn initialization, if you'd like to grant a list of Ability Sets manually with this method, the typical place to do so is:
+	 *
+	 * - OnInitAbilityActorInfo (event exposed by both UModularAbilitySystemComponent and UGSCCoreComponent)
+	 * - OnBeginPlay but only if ASC is on the Pawn (not using GSCModularPlayerState to hold the ASC)
+	 * 
+	 * Both Player State pawns and non Player State pawns can use OnInitAbilityActorInfo, while only non Player State pawns can use OnBeginPlay to grant the ability.
+	 * 
+	 * Also, for input binding to work and register properly, the avatar actor for this ASC must have UGSCAbilityInputBindingComponent actor component.
+	 * 
+	 * @param InAbilitySet The Ability Set to grant to the ASC
+	 * @param OutHandle Handle that can be used to remove the set later on
+	 * 
+	 * @return True if the ability set was granted successfully, false otherwise
+	 */
+	UFUNCTION(BlueprintCallable, Category = "GAS Companion|Ability Sets")
+	bool GiveAbilitySet(const UMGAAbilitySet* InAbilitySet, FMGAAbilitySetHandle& OutHandle);
 	
+	/**
+	 * Removes the AbilitySet represented by InAbilitySetHandle from the passed in ASC. Clears out any previously granted Abilities,
+	 * Attributes, Effects and Owned Tags from the set.
+	 *
+	 * Like granting, it is advised to call this method on both Server and Client for multiplayer games.
+	 * 
+	 * @param InAbilitySetHandle Handle of the Ability Set to remove
+	 * 
+	 * @return True if the ability set was removed successfully, false otherwise
+	 */
+	UFUNCTION(BlueprintCallable, Category = "GAS Companion|Ability Sets")
+	bool ClearAbilitySet(UPARAM(ref) FMGAAbilitySetHandle& InAbilitySetHandle);
+
 	/*
 	* Remove an ability from the Actor's Ability System Component
 	*
@@ -396,9 +464,36 @@ protected:
 	void HandleAbilityFailed(const UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason);
 
 public:
+	/** List of Gameplay Abilities to grant when the Ability System Component is initialized */
+	UPROPERTY(EditDefaultsOnly, Category = "ModularAbilitySystem|Ability")
+	TArray<FMGAGameFeatureAbilityMapping> GrantedAbilities;
+
 	/* List of GameplayEffects to apply when the Ability System Component is initialized (typically on begin play). */
 	UPROPERTY(EditDefaultsOnly, Category = "ModularAbilitySystem|Effect")
 	TArray<TSubclassOf<UGameplayEffect>> GrantedEffects;
+
+	/** List of Attribute Sets to grant when the Ability System Component is initialized, with optional initialization data */
+	UPROPERTY(EditDefaultsOnly, Category = "ModularAbilitySystem|Attribute")
+	TArray<FMGAAttributeSetDefinition> GrantedAttributes;
+
+	/** List of Gameplay Ability Sets to grant when the Ability System Component is initialized */
+	UPROPERTY(EditDefaultsOnly, Category = "ModularAbilitySystem|Ability")
+	TArray<TSoftObjectPtr<UMGAAbilitySet>> GrantedAbilitySets;
+
+	/** Called when Ability System Component is initialized from InitAbilityActorInfo */
+	virtual void GrantDefaultAbilitiesAndAttributes(AActor* InOwnerActor, AActor* InAvatarActor);
+	
+	/** Called when Ability System Component is initialized from InitAbilityActorInfo */
+	virtual void GrantDefaultAbilitySets(AActor* InOwnerActor, AActor* InAvatarActor);
+
+	/** Called from GrantDefaultAbilitiesAndAttributes. Determine if ability should be granted, prevents re-adding an ability previously granted in case bResetAbilitiesOnSpawn is set to false */
+	virtual bool ShouldGrantAbility(TSubclassOf<UGameplayAbility> InAbility, const int32 InLevel = 1);
+	
+	/** Called from GrantDefaultAbilitySets. Determine if ability set should be granted, prevents re-granting a set previously added */
+	virtual bool ShouldGrantAbilitySet(const UMGAAbilitySet* InAbilitySet) const;
+
+	/** Returns true whether the current owner actor is of type PlayerState */
+	bool IsPlayerStateOwner() const;
 
 protected:
 	/* If set, this table is used to look up tag relationships for activate and cancel. */
@@ -416,14 +511,37 @@ protected:
 
 	/* Number of abilities running in each activation group. */
 	int32 ActivationGroupCounts[static_cast<uint8>(EModularAbilityActivationGroup::MAX)];
+
+	// Cached granted Ability Handles
+	UPROPERTY(transient)
+	TArray<FMGAMappedAbility> AddedAbilityHandles;
 	
 	/* Cached applied Startup Effects. */
 	UPROPERTY(transient)
 	TArray<FActiveGameplayEffectHandle> AddedEffects;
+
+	// Cached granted AttributeSets
+	UPROPERTY(transient)
+	TArray<TObjectPtr<UAttributeSet>> AddedAttributes;
+	
+	// Cached granted Ability Sets
+	UPROPERTY(transient)
+	TArray<FMGAAbilitySetHandle> AddedAbilitySets;
+
+	//~ Begin UAbilitySystemComponent interface
+	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
+	//~ End UAbilitySystemComponent interface
 	
 	/* Called when Ability System Component is initialized. */
 	void GrantStartupEffects();
 	
+	/** Reinit the cached ability actor info (specifically the player controller) */
+	UFUNCTION()
+	void OnPawnControllerChanged(APawn* Pawn, AController* NewController);
+
+	/** Handler for AbilitySystem OnGiveAbility delegate. Sets up input binding for clients (not authority) when ability is granted and available for binding. */
+	//virtual void HandleOnGiveAbility(FGameplayAbilitySpec& AbilitySpec, UGSCAbilityInputBindingComponent* InputComponent, UInputAction* InputAction, EModularAbilityActivationPolicy TriggerEvent, FGameplayAbilitySpec NewAbilitySpec);
+
 private:
 	/* Array of active GE handle bound to delegates that will be fired when the count for the key tag changes to or away from zero */
 	TArray<FActiveGameplayEffectHandle> GameplayEffectHandles;

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "GameplayAbilities/ModularAbilitySet.h"
-#include "GameplayAbilities/ModularAbilityTagRelationshipMapping.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularAbilitySet.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularAbilityTagRelationshipMapping.h"
 
 #include "IAbilityPawnDataInterface.generated.h"
 

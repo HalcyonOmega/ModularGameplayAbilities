@@ -1,6 +1,6 @@
 ﻿// Copyright Chronicler.
 
-#include "GameplayAbilities/ModularGameplayAbility.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemGlobals.h"
@@ -12,7 +12,7 @@
 #include "Actor/ModularExperienceCharacter.h"
 #include "ActorComponent/ModularAbilitySystemComponent.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
-#include "GameplayAbilities/ModularAbilityCost.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularAbilityCost.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularGameplayAbility)
 

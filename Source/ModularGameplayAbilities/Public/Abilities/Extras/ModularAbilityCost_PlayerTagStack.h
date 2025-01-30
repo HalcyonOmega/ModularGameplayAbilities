@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameplayTagContainer.h"
-#include "GameplayAbilities/ModularAbilityCost.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularAbilityCost.h"
 #include "ScalableFloat.h"
 
 #include "ModularAbilityCost_PlayerTagStack.generated.h"

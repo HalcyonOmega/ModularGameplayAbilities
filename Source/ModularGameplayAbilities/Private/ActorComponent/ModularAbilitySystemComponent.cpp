@@ -3,14 +3,15 @@
 #include "ActorComponent/ModularAbilitySystemComponent.h"
 
 #include "ModularGameplayAbilitiesLogChannels.h"
+#include "Abilities/MGAAbilitySet.h"
 #include "Animation/GameplayTagsAnimInstance.h"
 #include "DataAsset/ModularAbilityData.h"
 #include "DataAsset/ModularAssetManager.h"
-#include "GameplayAbilities/ModularGameplayAbility.h"
+#include "Abilities/ModularGameplayAbility.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
-#include "GameplayAbilities/ModularAbilityTagRelationshipMapping.h"
-#include "GameplayAbilities/ModularGlobalAbilitySystem.h"
+#include "Abilities/ModularAbilityTagRelationshipMapping.h"
+#include "Abilities/ModularGlobalAbilitySystem.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilitySystemComponent)
 
@@ -30,11 +31,11 @@ void UModularAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	RegisterDelegates();
+	//RegisterDelegates();
 
 	// Grant startup effects on begin play instead of from within InitAbilityActorInfo to avoid
 	// "ticking" periodic effects when BP is first opened
-	GrantStartupEffects();
+	//GrantStartupEffects();
 }
 
 void UModularAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -163,6 +164,10 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 		{
 			ModularAnimInst->InitializeWithAbilitySystem(this);
 		}
+
+
+		/* @TODO: Verify if fixes issues, otherwise remove */
+		RegisterDelegates();
 		
 		/* This will happen multiple times for both client/server */
 		OnInitAbilityActorInfo.Broadcast();
@@ -174,13 +179,13 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 void UModularAbilitySystemComponent::HandleOnAbilityActivate(UGameplayAbility* Ability)
 {
 	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityActivatedCallback %s"), *Ability->GetName());
-	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
-	 * const AActor* Avatar = GetAvatarActor();
+
+	const AActor* Avatar = GetAvatarActor();
 	if (!Avatar)
 	{
 		UE_LOG(LogModularGameplayAbilities, Error, TEXT("UModularAbilitySystemComponent::OnAbilityActivated No OwnerActor for this ability: %s"), *Ability->GetName());
 		return;
-	} */
+	}
 	
 	OnAbilityActivate.Broadcast(Ability);
 }
@@ -222,13 +227,13 @@ void UModularAbilitySystemComponent::HandleOnAbilityCommit(UGameplayAbility* Act
 void UModularAbilitySystemComponent::HandleOnAbilityEnd(UGameplayAbility* Ability)
 {
 	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback %s"), *Ability->GetName());
-	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
-	 * const AActor* Avatar = GetAvatarActor();
+
+	const AActor* Avatar = GetAvatarActor();
 	if (!Avatar)
 	{
 		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback No OwnerActor for this ability: %s"), *Ability->GetName());
 		return;
-	} */
+	}
 
 	OnAbilityEnd.Broadcast(Ability);
 }
@@ -237,13 +242,13 @@ void UModularAbilitySystemComponent::HandleOnAbilityFail(const UGameplayAbility*
 	const FGameplayTagContainer& Tags)
 {
 	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityFailedCallback %s"), *Ability->GetName());
-	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
-	 * const AActor* Avatar = GetAvatarActor();
+
+	const AActor* Avatar = GetAvatarActor();
 	if (!Avatar)
 	{
 		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityFailed No OwnerActor for this ability: %s Tags: %s"), *Ability->GetName(), *Tags.ToString());
 		return;
-	} */
+	}
 
 	OnAbilityFail.Broadcast(Ability, Tags);
 }
@@ -470,6 +475,44 @@ void UModularAbilitySystemComponent::GrantAbility(TSubclassOf<UGameplayAbility> 
 	GiveAbility(AbilitySpec);
 }
 
+bool UModularAbilitySystemComponent::GiveAbilitySet(const UMGAAbilitySet* InAbilitySet, FMGAAbilitySetHandle& OutHandle)
+{
+	UE_LOG(LogModularGameplayAbilities, Verbose, TEXT("Granting Ability Set \"%s\" (Owner: %s, Avatar: %s)"), *GetNameSafe(InAbilitySet), *GetNameSafe(GetOwnerActor()), *GetNameSafe(GetAvatarActor_Direct()));
+
+	if (!InAbilitySet)
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("Called with an invalid Ability Set"));
+		return false;
+	}
+
+	FText ErrorText;
+	if (!InAbilitySet->GrantToAbilitySystem(this, OutHandle, &ErrorText))
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("Error trying to grant ability set %s - %s"), *GetNameSafe(InAbilitySet), *ErrorText.ToString());
+		return false;
+	}
+	
+	return true;
+}
+
+bool UModularAbilitySystemComponent::ClearAbilitySet(FMGAAbilitySetHandle& InAbilitySetHandle)
+{
+	if (!InAbilitySetHandle.IsValid())
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("Called with an invalid Ability Set (The handle doesn't have AbilitySetPathName defined)"));
+		return false;
+	}
+
+	FText ErrorText;
+	if (!UMGAAbilitySet::RemoveFromAbilitySystem(this, InAbilitySetHandle, &ErrorText))
+	{
+		UE_LOG(LogModularGameplayAbilities, Error, TEXT("Error trying to remove ability set %s - %s"), *InAbilitySetHandle.AbilitySetPathName, *ErrorText.ToString());
+		return false;
+	}
+	
+	return true;
+}
+
 void UModularAbilitySystemComponent::RemoveAbility(TSubclassOf<UGameplayAbility> Ability)
 {
 	TArray<TSubclassOf<UGameplayAbility>> AbilitiesToRemove;
@@ -515,8 +558,7 @@ bool UModularAbilitySystemComponent::IsUsingAbilityByTags(FGameplayTagContainer 
 	return GetActiveAbilitiesByTags(AbilityTags).Num() > 0;
 }
 
-TArray<UGameplayAbility*> UModularAbilitySystemComponent::GetActiveAbilitiesByClass(
-	TSubclassOf<UGameplayAbility> AbilityToSearch) const
+TArray<UGameplayAbility*> UModularAbilitySystemComponent::GetActiveAbilitiesByClass(TSubclassOf<UGameplayAbility> AbilityToSearch) const
 {
 	TArray<FGameplayAbilitySpec> Specs = GetActivatableAbilities();
 	TArray<struct FGameplayAbilitySpec*> MatchingGameplayAbilities;
@@ -549,8 +591,7 @@ TArray<UGameplayAbility*> UModularAbilitySystemComponent::GetActiveAbilitiesByCl
 	return ActiveAbilities;
 }
 
-TArray<UGameplayAbility*> UModularAbilitySystemComponent::GetActiveAbilitiesByTags(
-	const FGameplayTagContainer GameplayTagContainer) const
+TArray<UGameplayAbility*> UModularAbilitySystemComponent::GetActiveAbilitiesByTags(const FGameplayTagContainer GameplayTagContainer) const
 {
 	TArray<UGameplayAbility*> ActiveAbilities;
 	TArray<FGameplayAbilitySpec*> MatchingGameplayAbilities;
@@ -586,8 +627,7 @@ void UModularAbilitySystemComponent::ClampAttributeBaseValue(FGameplayAttribute 
 	SetAttributeBaseValue(Attribute, NewValue);
 }
 
-void UModularAbilitySystemComponent::AdjustAttributeForMaxChange(UAttributeSet* AttributeSet,
-	const FGameplayAttribute AffectedAttributeProperty, const FGameplayAttribute MaxAttribute, float NewMaxValue)
+void UModularAbilitySystemComponent::AdjustAttributeForMaxChange(UAttributeSet* AttributeSet, const FGameplayAttribute AffectedAttributeProperty, const FGameplayAttribute MaxAttribute, float NewMaxValue)
 {
 	FGameplayAttributeData* AttributeData = AffectedAttributeProperty.GetGameplayAttributeData(AttributeSet);
 	if (!AttributeData)
@@ -929,6 +969,234 @@ void UModularAbilitySystemComponent::HandleAbilityFailed(const UGameplayAbility*
 	}	
 }
 
+void UModularAbilitySystemComponent::GrantDefaultAbilitiesAndAttributes(AActor* InOwnerActor, AActor* InAvatarActor)
+{
+	UE_LOG(LogModularGameplayAbilities, Verbose, TEXT("Owner: %s, Avatar: %s"), *GetNameSafe(InOwnerActor), *GetNameSafe(InAvatarActor))
+
+	if (bResetAttributesOnSpawn)
+	{
+		// Reset/Remove abilities if we had already added them
+		for (UAttributeSet* AttributeSet : AddedAttributes)
+		{
+			RemoveSpawnedAttribute(AttributeSet);
+		}
+
+		AddedAttributes.Empty(GrantedAttributes.Num());
+	}
+
+
+	if (bResetAbilitiesOnSpawn)
+	{
+		for (const FMGAMappedAbility& DefaultAbilityHandle : AddedAbilityHandles)
+		{
+			SetRemoveAbilityOnEnd(DefaultAbilityHandle.Handle);
+		}
+		/* @TODO: Fix or cleanup
+		for (FDelegateHandle InputBindingDelegateHandle : InputBindingDelegateHandles)
+		{
+			// Clear any delegate handled bound previously for this actor
+			OnGiveAbilityDelegate.Remove(InputBindingDelegateHandle);
+			InputBindingDelegateHandle.Reset();
+		}
+		*/
+		AddedAbilityHandles.Empty(GrantedAbilities.Num());
+		// @TODO: Here too
+		//InputBindingDelegateHandles.Empty();
+	}
+
+	/* @TODO: Fix or cleanup
+	 * UGSCAbilityInputBindingComponent* InputComponent = IsValid(InAvatarActor) ? InAvatarActor->FindComponentByClass<UGSCAbilityInputBindingComponent>() : nullptr;
+	*/
+	// Startup abilities
+	// ReSharper disable once CppUseStructuredBinding
+	for (const FMGAGameFeatureAbilityMapping& GrantedAbility : GrantedAbilities)
+	{
+		const TSubclassOf<UGameplayAbility> Ability = GrantedAbility.AbilityType.LoadSynchronous();
+		FGameplayTag InputTag = GrantedAbility.InputTag;
+
+		if (!Ability)
+		{
+			continue;
+		}
+
+		FGameplayAbilitySpec NewAbilitySpec = BuildAbilitySpecFromClass(Ability, GrantedAbility.Level);
+
+		// Try to grant the ability first
+		if (IsOwnerActorAuthoritative() && ShouldGrantAbility(Ability, GrantedAbility.Level))
+		{
+			// Only Grant abilities on authority
+			UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::GrantDefaultAbilitiesAndAttributes - Authority, Grant Ability (%s)"), *NewAbilitySpec.Ability->GetClass()->GetName())
+			FGameplayAbilitySpecHandle AbilityHandle = GiveAbility(NewAbilitySpec);
+			AddedAbilityHandles.Add(FMGAMappedAbility(AbilityHandle, NewAbilitySpec, nullptr));
+		}
+
+		// We don't grant here but try to get the spec already granted or register delegate to handle input binding
+		/* @TODO: Fix or cleanup
+		if (InputComponent && InputAction)
+		{
+			// Handle for server or standalone game, clients need to bind OnGiveAbility
+			const FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromClass(Ability);
+			if (AbilitySpec)
+			{
+				InputComponent->SetInputBinding(InputAction, GrantedAbility.TriggerEvent, AbilitySpec->Handle);
+			}
+			else
+			{
+				// Register a delegate triggered when ability is granted and available on clients
+				FDelegateHandle DelegateHandle = OnGiveAbilityDelegate.AddUObject(this, &UModularAbilitySystemComponent::HandleOnGiveAbility, InputComponent, InputAction, GrantedAbility.TriggerEvent, NewAbilitySpec);
+				InputBindingDelegateHandles.Add(DelegateHandle);
+			}
+		}*/
+	}
+
+	// Startup attributes
+	for (const FMGAAttributeSetDefinition& AttributeSetDefinition : GrantedAttributes)
+	{
+		if (AttributeSetDefinition.AttributeSet)
+		{
+			const bool bHasAttributeSet = GetAttributeSubobject(AttributeSetDefinition.AttributeSet) != nullptr;
+			UE_LOG(LogModularGameplayAbilities, 
+				Verbose,
+				TEXT("UModularAbilitySystemComponent::GrantDefaultAbilitiesAndAttributes - HasAttributeSet: %s (%s)"),
+				bHasAttributeSet ? TEXT("true") : TEXT("false"),
+				*GetNameSafe(AttributeSetDefinition.AttributeSet)
+			)
+
+			// Prevent adding attribute set if already granted
+			if (!bHasAttributeSet && InOwnerActor)
+			{
+				UAttributeSet* AttributeSet = NewObject<UAttributeSet>(InOwnerActor, AttributeSetDefinition.AttributeSet);
+				if (AttributeSetDefinition.InitializationData)
+				{
+					AttributeSet->InitFromMetaDataTable(AttributeSetDefinition.InitializationData);
+				}
+				AddedAttributes.Add(AttributeSet);
+				AddAttributeSetSubobject(AttributeSet);
+			}
+		}
+	}
+}
+
+void UModularAbilitySystemComponent::GrantDefaultAbilitySets(AActor* InOwnerActor, AActor* InAvatarActor)
+{
+	UE_LOG(LogModularGameplayAbilities, Verbose, TEXT("Initialize Ability Sets - InOwnerActor: %s, InAvatarActor: %s"), *GetNameSafe(InOwnerActor), *GetNameSafe(InAvatarActor))
+	
+	if (!IsValid(InOwnerActor) || !IsValid(InAvatarActor))
+	{
+		return;
+	}
+
+	for (const TSoftObjectPtr<UMGAAbilitySet>& AbilitySetEntry : GrantedAbilitySets)
+	{
+		if (const UMGAAbilitySet* AbilitySet = AbilitySetEntry.LoadSynchronous())
+		{
+			if (!ShouldGrantAbilitySet(AbilitySet))
+			{
+				continue;
+			}
+			
+			// Check for input bindings, if we need some, then ensure AvatarActor has the required component to issue a warning if not
+			//
+			// This also take care of order of initialization in case of Player State characters. On first invocation from InitializeComponent(), the Avatar Actor is likely
+			// not yet set and points to owner actor (PlayerState). This is only after ACharacter::PossessedBy() that proper Avatar Actor is set, thus allowing us to get back
+			// the Input Binding component and set up the ability bindings.
+
+			// If the set doesn't have any Ability with bindings, then we can grant early.
+			if (AbilitySet->HasInputBinding())
+			{
+				// Binding will only ever happen on Pawn actors, not when AvatarActor is set to PlayerState early on in initialization order
+				const APawn* AvatarPawn = Cast<APawn>(InAvatarActor);
+				if (!AvatarPawn)
+				{
+					// Try next time
+					return;
+				}
+
+				/* @TODO: Fix or cleanup
+				const UGSCAbilityInputBindingComponent* InputBindingComponent = AvatarPawn->FindComponentByClass<UGSCAbilityInputBindingComponent>();
+				if (!InputBindingComponent)
+				{
+					const FText FormatText = NSLOCTEXT(
+						"ModularAbilitySystemComponent",
+						"Error_AbilitySet_Invalid_InputBindingComponent",
+						"The set contains Abilities with Input bindings but {0} is missing the required UGSCAbilityInputBindingComponent actor component."
+					);
+
+					const FText ErrorText = FText::Format(FormatText, FText::FromString(AvatarPawn->GetName()));
+					UE_LOG(LogModularGameplayAbilities, Error, TEXT("Error trying to grant ability set %s - %s"), *GetNameSafe(AbilitySet), *ErrorText.ToString());
+					return;
+				}
+				*/
+			}
+			
+			FText ErrorText;
+			FMGAAbilitySetHandle Handle;
+			if (!AbilitySet->GrantToAbilitySystem(this, Handle, &ErrorText, false))
+			{
+				UE_LOG(LogModularGameplayAbilities, Error, TEXT("Error trying to grant ability set %s - %s"), *GetNameSafe(AbilitySet), *ErrorText.ToString());
+				continue;
+			}
+
+			AddedAbilitySets.AddUnique(Handle);
+		}
+	}
+}
+
+bool UModularAbilitySystemComponent::ShouldGrantAbility(TSubclassOf<UGameplayAbility> InAbility, const int32 InLevel)
+{
+	if (bResetAbilitiesOnSpawn)
+	{
+		// User wants abilities to be granted each time InitAbilityActor is called
+		return true;
+	}
+
+	// Check for activatable abilities, if one is matching the given Ability type, prevent re adding again
+	TArray<FGameplayAbilitySpec> AbilitySpecs = GetActivatableAbilities();
+	for (const FGameplayAbilitySpec& ActivatableAbility : AbilitySpecs)
+	{
+		if (!ActivatableAbility.Ability)
+		{
+			continue;
+		}
+
+		if (ActivatableAbility.Ability->GetClass() == InAbility && ActivatableAbility.Level == InLevel)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool UModularAbilitySystemComponent::ShouldGrantAbilitySet(const UMGAAbilitySet* InAbilitySet) const
+{
+	check(InAbilitySet);
+
+	// Forcefully re-grant ability sets in case owner is PlayerState, this is to ensure input binding still works after a respawn
+	// ASC living on Pawns that don't have this problem.
+	if (IsPlayerStateOwner())
+	{
+		return true;
+	}
+
+	// ReSharper disable once CppUseStructuredBinding
+	for (const FMGAAbilitySetHandle& Handle : AddedAbilitySets)
+	{
+		if (Handle.AbilitySetPathName == InAbilitySet->GetPathName())
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+bool UModularAbilitySystemComponent::IsPlayerStateOwner() const
+{
+	const AActor* LocalOwnerActor = GetOwnerActor();
+	return LocalOwnerActor && LocalOwnerActor->IsA<APlayerState>();
+}
+
 bool UModularAbilitySystemComponent::IsActivationGroupBlocked(EModularAbilityActivationGroup Group) const
 {
 	bool bBlocked = false;
@@ -1061,6 +1329,12 @@ int32 UModularAbilitySystemComponent::GetActiveGameplayEffectLevel(FActiveGamepl
 	}
 	return int32(-1);
 }
+
+void UModularAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
+{
+	Super::OnGiveAbility(AbilitySpec);
+}
+
 void UModularAbilitySystemComponent::GrantStartupEffects()
 {
 	if (!IsOwnerActorAuthoritative())
@@ -1090,8 +1364,22 @@ void UModularAbilitySystemComponent::GrantStartupEffects()
 	}
 }
 
-const FGameplayTagContainer& UModularAbilitySystemComponent::GetSourceTagsFromContext(
-	const FGameplayEffectModCallbackData& Data)
+void UModularAbilitySystemComponent::OnPawnControllerChanged(APawn* Pawn, AController* NewController)
+{
+	if (AbilityActorInfo && AbilityActorInfo->OwnerActor == Pawn && AbilityActorInfo->PlayerController != NewController)
+	{
+		if (!NewController)
+		{
+			// NewController null, prevent refresh actor info. Needed to ensure TargetActor EndPlay properly unbind from GenericLocalConfirmCallbacks/GenericLocalCancelCallbacks
+			// and avoid an ensure error if ActorInfo PlayerController is invalid
+			return;
+		}
+
+		AbilityActorInfo->InitFromActor(AbilityActorInfo->OwnerActor.Get(), AbilityActorInfo->AvatarActor.Get(), this);
+	}
+}
+
+const FGameplayTagContainer& UModularAbilitySystemComponent::GetSourceTagsFromContext(const FGameplayEffectModCallbackData& Data)
 {
 	return *Data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
 }

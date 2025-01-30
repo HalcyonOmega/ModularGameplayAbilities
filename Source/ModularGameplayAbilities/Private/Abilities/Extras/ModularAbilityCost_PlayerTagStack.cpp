@@ -1,10 +1,10 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "GameplayAbilities/Abilities/ModularAbilityCost_PlayerTagStack.h"
+#include "ModularGameplayAbilities/Public/Abilities/Extras/ModularAbilityCost_PlayerTagStack.h"
 
 #include "ModularAbilityPlayerState.h"
 #include "GameFramework/Controller.h"
-#include "GameplayAbilities/ModularGameplayAbility.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilityCost_PlayerTagStack)
 

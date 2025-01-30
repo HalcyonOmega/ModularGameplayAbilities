@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "GameplayAbilities/Abilities/ModularGameplayAbility_Reset.h"
+#include "ModularGameplayAbilities/Public/Abilities/Extras/ModularGameplayAbility_Reset.h"
 
 #include "ModularAbilityTags.h"
 #include "ActorComponent/ModularAbilitySystemComponent.h"

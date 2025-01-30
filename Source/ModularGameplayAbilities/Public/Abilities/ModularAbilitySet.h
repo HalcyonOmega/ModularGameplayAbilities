@@ -7,7 +7,6 @@
 #include "GameplayAbilitySpecHandle.h"
 #include "GameplayTagContainer.h"
 #include "Abilities/GameplayAbility.h"
-#include "ActorComponent/ModularAbilitySystemComponent.h"
 
 #include "ModularAbilitySet.generated.h"
 
@@ -25,13 +24,12 @@ struct MODULARGAMEPLAYABILITIES_API FModularAbilitySet_AttributeSet
 		:DefaultStartingTable(nullptr)
 	{ }
 public:
-	// Gameplay effect to grant.
+	// Attribute Set to grant.
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UAttributeSet> AttributeSet;
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UDataTable> DefaultStartingTable;
-
 };
 
 /**
@@ -90,7 +88,7 @@ public:
 	void AddGameplayEffectHandle(const FActiveGameplayEffectHandle& Handle);
 	void AddAttributeSet(UAttributeSet* Set);
 
-	void TakeFromAbilitySystem(UModularAbilitySystemComponent* AbilitySystemComponent);
+	void TakeFromAbilitySystem(UAbilitySystemComponent* AbilitySystemComponent);
 
 protected:
 
@@ -124,7 +122,7 @@ public:
 	 * Grants the ability set to the specified ability system component.
 	 * The returned handles can be used later to take away anything that was granted.
 	 */
-	void GiveToAbilitySystem(UModularAbilitySystemComponent* ModularASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject) const;
+	void GiveToAbilitySystem(UAbilitySystemComponent* ASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject) const;
 
 protected:
 	// Gameplay abilities to grant when this ability set is granted.

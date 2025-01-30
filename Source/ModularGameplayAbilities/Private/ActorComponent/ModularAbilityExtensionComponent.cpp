@@ -2,11 +2,14 @@
 
 #include "ActorComponent/ModularAbilityExtensionComponent.h"
 
+#include "AbilitySystemGlobals.h"
 #include "AbilitySystemInterface.h"
 #include "ModularAbilityTags.h"
 #include "ModularGameplayAbilitiesLogChannels.h"
 #include "ModularGameplayTags.h"
+#include "ModularPawn.h"
 #include "ModularPlayerState.h"
+#include "Abilities/MGAAbilitySet.h"
 #include "Actor/ModularExperienceCharacter.h"
 #include "ActorComponent/ModularAbilitySystemComponent.h"
 #include "ActorComponent/ModularInputComponent.h"
@@ -215,7 +218,6 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 	if (CurrentState == ModularGameplayTags::InitState_Spawned
 		&& DesiredState == ModularGameplayTags::InitState_DataAvailable)
 	{
-		/* @TODO: Relook architecture. Commented code below to use alternate pawn-driven architecture for use with AI Controllers
 		// The player state is required.
 		if (!GetPlayerState<AModularPlayerState>())
 		{
@@ -246,29 +248,6 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 
 			// The input component and local player is required when locally controlled.
 			if (!Pawn->InputComponent || !ModularPC || !ModularPC->GetLocalPlayer())
-			{
-				return false;
-			}
-		}
-
-		return true;
-		*/
-		
-		// Pawn data is required.
-		const UModularPawnComponent* ModularPawnComponent = Pawn->GetComponentByClass<UModularPawnComponent>();
-		const IAbilityPawnDataInterface* PawnData = ModularPawnComponent->GetPawnData<IAbilityPawnDataInterface>();
-		if (!PawnData)
-		{
-			return false;
-		}
-
-		const bool bHasAuthority = Pawn->HasAuthority();
-		const bool bIsLocallyControlled = Pawn->IsLocallyControlled();
-
-		if (bHasAuthority || bIsLocallyControlled)
-		{
-			// Check for being possessed by a controller.
-			if (!GetController<AController>())
 			{
 				return false;
 			}

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "GameplayAbilities/ModularGameplayAbility.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h"
 
 #include "ModularGameplayAbility_Reset.generated.h"
 

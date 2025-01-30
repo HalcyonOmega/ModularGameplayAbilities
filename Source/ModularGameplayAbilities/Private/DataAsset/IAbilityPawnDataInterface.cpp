@@ -2,7 +2,7 @@
 
 #include "DataAsset/IAbilityPawnDataInterface.h"
 
-#include "GameplayAbilities/ModularAbilityTagRelationshipMapping.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularAbilityTagRelationshipMapping.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(IAbilityPawnDataInterface)
 

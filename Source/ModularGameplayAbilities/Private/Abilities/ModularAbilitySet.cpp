@@ -1,4 +1,4 @@
-﻿#include "GameplayAbilities/ModularAbilitySet.h"
+﻿#include "ModularGameplayAbilities/Public/Abilities/ModularAbilitySet.h"
 
 #include "ModularGameplayAbilitiesLogChannels.h"
 #include "ActorComponent/ModularAbilitySystemComponent.h"
@@ -26,11 +26,11 @@ void FModularAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* Set)
 	GrantedAttributeSets.Add(Set);
 }
 
-void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UModularAbilitySystemComponent* ModularASC)
+void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComponent* ASC)
 {
-	check(ModularASC);
+	check(ASC);
 
-	if (!ModularASC->IsOwnerActorAuthoritative())
+	if (!ASC->IsOwnerActorAuthoritative())
 	{
 		// Must be authoritative to give or take ability sets.
 		return;
@@ -40,7 +40,7 @@ void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UModularAbilitySys
 	{
 		if (Handle.IsValid())
 		{
-			ModularASC->ClearAbility(Handle);
+			ASC->ClearAbility(Handle);
 		}
 	}
 
@@ -48,13 +48,13 @@ void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UModularAbilitySys
 	{
 		if (Handle.IsValid())
 		{
-			ModularASC->RemoveActiveGameplayEffect(Handle);
+			ASC->RemoveActiveGameplayEffect(Handle);
 		}
 	}
 	
 	for (UAttributeSet* Set : GrantedAttributeSets)
 	{
-		ModularASC->RemoveSpawnedAttribute(Set);
+		ASC->RemoveSpawnedAttribute(Set);
 	}
 
 	AbilitySpecHandles.Reset();
@@ -67,11 +67,11 @@ UModularAbilitySet::UModularAbilitySet(const FObjectInitializer& ObjectInitializ
 {
 }
 
-void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* ModularASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject) const
+void UModularAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject) const
 {
-	check(ModularASC);
+	check(ASC);
 
-	if (!ModularASC->IsOwnerActorAuthoritative())
+	if (!ASC->IsOwnerActorAuthoritative())
 	{
 		// Must be authoritative to give or take ability sets.
 		return;
@@ -88,13 +88,13 @@ void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* Mod
 			continue;
 		}
 
-		UModularGameplayAbility* AbilityCDO = AbilityToGrant.Ability->GetDefaultObject<UModularGameplayAbility>();
+		UGameplayAbility* AbilityCDO = AbilityToGrant.Ability->GetDefaultObject<UGameplayAbility>();
 
 		FGameplayAbilitySpec AbilitySpec(AbilityCDO, AbilityToGrant.AbilityLevel);
 		AbilitySpec.SourceObject = SourceObject;
 		AbilitySpec.GetDynamicSpecSourceTags().AddTag(AbilityToGrant.InputTag);
 
-		const FGameplayAbilitySpecHandle AbilitySpecHandle = ModularASC->GiveAbility(AbilitySpec);
+		const FGameplayAbilitySpecHandle AbilitySpecHandle = ASC->GiveAbility(AbilitySpec);
 
 		if (OutGrantedHandles)
 		{
@@ -114,7 +114,7 @@ void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* Mod
 		}
 
 		const UGameplayEffect* GameplayEffect = EffectToGrant.GameplayEffect->GetDefaultObject<UGameplayEffect>();
-		const FActiveGameplayEffectHandle GameplayEffectHandle = ModularASC->ApplyGameplayEffectToSelf(GameplayEffect, EffectToGrant.EffectLevel, ModularASC->MakeEffectContext());
+		const FActiveGameplayEffectHandle GameplayEffectHandle =ASC->ApplyGameplayEffectToSelf(GameplayEffect, EffectToGrant.EffectLevel, ASC->MakeEffectContext());
 
 		if (OutGrantedHandles)
 		{
@@ -133,8 +133,8 @@ void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* Mod
 			continue;
 		}
 		
-		UAttributeSet* NewSet = NewObject<UAttributeSet>(ModularASC->GetAvatarActor(), SetToGrant.AttributeSet);
-		ModularASC->AddAttributeSetSubobject(NewSet);
+		UAttributeSet* NewSet = NewObject<UAttributeSet>(ASC->GetAvatarActor(), SetToGrant.AttributeSet);
+		ASC->AddAttributeSetSubobject(NewSet);
 		
 
 		if (OutGrantedHandles)

@@ -1,6 +1,6 @@
 // Copyright Chronicler.
 
-#include "GameplayAbilities/ModularGlobalAbilitySystem.h"
+#include "ModularGameplayAbilities/Public/Abilities/ModularGlobalAbilitySystem.h"
 
 #include "ActorComponent/ModularAbilitySystemComponent.h"
 
