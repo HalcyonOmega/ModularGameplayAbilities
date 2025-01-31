@@ -67,7 +67,7 @@ UModularAbilitySet::UModularAbilitySet(const FObjectInitializer& ObjectInitializ
 {
 }
 
-void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* ModularASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject) const
+void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* ModularASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject, bool bCallRegisterDelegates) const
 {
 	check(ModularASC);
 
@@ -132,14 +132,26 @@ void UModularAbilitySet::GiveToAbilitySystem(UModularAbilitySystemComponent* Mod
 			UE_LOG(LogModularGameplayAbilities, Error, TEXT("GrantedAttributes[%d] on ability set [%s] is not valid"), SetIndex, *GetNameSafe(this));
 			continue;
 		}
+
+		UAttributeSet* NewSet = NewObject<UAttributeSet>(ModularASC->GetOwnerActor(), SetToGrant.AttributeSet);
+		if (SetToGrant.DefaultStartingTable)
+		{
+			if (const UDataTable* DataTable = SetToGrant.DefaultStartingTable)
+			{
+				NewSet->InitFromMetaDataTable(DataTable);
+			}
+		}
 		
-		UAttributeSet* NewSet = NewObject<UAttributeSet>(ModularASC->GetAvatarActor(), SetToGrant.AttributeSet);
 		ModularASC->AddAttributeSetSubobject(NewSet);
-		
 
 		if (OutGrantedHandles)
 		{
 			OutGrantedHandles->AddAttributeSet(NewSet);
 		}
+	}
+
+	if (bCallRegisterDelegates)
+	{
+		ModularASC->RegisterDelegates();	
 	}
 }

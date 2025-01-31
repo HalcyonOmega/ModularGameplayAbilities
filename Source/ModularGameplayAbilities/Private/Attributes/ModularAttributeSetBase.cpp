@@ -598,9 +598,6 @@ void UModularAttributeSetBase::PreNetReceive()
 }
 
 #if WITH_EDITOR
-
-#if UE_VERSION_NEWER_THAN(5, 3, -1)
-
 EDataValidationResult UModularAttributeSetBase::IsDataValid(FDataValidationContext& Context) const
 {
 	EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(Context), EDataValidationResult::Valid);
@@ -630,18 +627,6 @@ EDataValidationResult UModularAttributeSetBase::IsDataValid(FDataValidationConte
 	
 	return Result;
 }
-
-#else
-
-EDataValidationResult UModularAttributeSetBase::IsDataValid(TArray<FText>& ValidationErrors)
-{
-	EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(ValidationErrors), EDataValidationResult::Valid);
-	Result = CombineDataValidationResults(Result, IsDataValidBlueprintEditor(ValidationErrors));
-	Result = CombineDataValidationResults(Result, IsDataValidRepNotifies(ValidationErrors));
-	return Result;
-}
-
-#endif
 
 EDataValidationResult UModularAttributeSetBase::IsDataValidBlueprintEditor(TArray<FText>& ValidationErrors) const
 {

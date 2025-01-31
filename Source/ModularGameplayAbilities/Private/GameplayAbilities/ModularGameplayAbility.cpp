@@ -543,12 +543,13 @@ void UModularGameplayAbility::ClearCameraMode()
 
 	if (ActiveCameraMode)
 	{
-		const AModularCharacter* ModularCharacter = GetModularCharacterFromActorInfo();
-		if (UModalCameraComponent* PawnComponent = ModularCharacter->FindComponentByClass<UModalCameraComponent>())
+		if (const AModularCharacter* ModularCharacter = GetModularCharacterFromActorInfo())
 		{
-			PawnComponent->ClearAbilityCameraMode(CurrentSpecHandle);
+			if (UModalCameraComponent* PawnComponent = ModularCharacter->FindComponentByClass<UModalCameraComponent>())
+			{
+				PawnComponent->ClearAbilityCameraMode(CurrentSpecHandle);
+			}
 		}
-
 		ActiveCameraMode = nullptr;
 	}
 }

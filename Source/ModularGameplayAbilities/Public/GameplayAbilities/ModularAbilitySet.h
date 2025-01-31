@@ -124,7 +124,7 @@ public:
 	 * Grants the ability set to the specified ability system component.
 	 * The returned handles can be used later to take away anything that was granted.
 	 */
-	void GiveToAbilitySystem(UModularAbilitySystemComponent* ModularASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject) const;
+	void GiveToAbilitySystem(UModularAbilitySystemComponent* ModularASC, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject, bool bCallRegisterDelegates = true) const;
 
 protected:
 	// Gameplay abilities to grant when this ability set is granted.

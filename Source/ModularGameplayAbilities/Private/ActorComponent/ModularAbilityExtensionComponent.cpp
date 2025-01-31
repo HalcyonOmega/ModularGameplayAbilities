@@ -2,6 +2,7 @@
 
 #include "ActorComponent/ModularAbilityExtensionComponent.h"
 
+#include "AbilitySystemGlobals.h"
 #include "AbilitySystemInterface.h"
 #include "ModularAbilityTags.h"
 #include "ModularGameplayAbilitiesLogChannels.h"
@@ -79,11 +80,13 @@ void UModularAbilityExtensionComponent::InitializeAbilitySystem(UModularAbilityS
 			if (AbilitySet)
 			{
 				FModularAbilitySet_GrantedHandles Handles;
-				AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, &Handles, nullptr);
+				AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, &Handles, nullptr, false);
 			}
 		}
 	}
-
+	/* @Change - Added RegisterDelegates & TruActivateAbilities calls below */
+	AbilitySystemComponent->RegisterDelegates();
+	AbilitySystemComponent->TryActivateAbilitiesOnSpawn_ExposeNative();
 	OnAbilitySystemInitialized.Broadcast();
 }
 
@@ -215,7 +218,6 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 	if (CurrentState == ModularGameplayTags::InitState_Spawned
 		&& DesiredState == ModularGameplayTags::InitState_DataAvailable)
 	{
-		/* @TODO: Relook architecture. Commented code below to use alternate pawn-driven architecture for use with AI Controllers
 		// The player state is required.
 		if (!GetPlayerState<AModularPlayerState>())
 		{
@@ -252,8 +254,8 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 		}
 
 		return true;
-		*/
 		
+		/*
 		// Pawn data is required.
 		const UModularPawnComponent* ModularPawnComponent = Pawn->GetComponentByClass<UModularPawnComponent>();
 		const IAbilityPawnDataInterface* PawnData = ModularPawnComponent->GetPawnData<IAbilityPawnDataInterface>();
@@ -274,7 +276,7 @@ bool UModularAbilityExtensionComponent::CanChangeInitState(UGameFrameworkCompone
 			}
 		}
 
-		return true;
+		return true;*/
 	}
 	else if (CurrentState == ModularGameplayTags::InitState_DataAvailable
 		&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
@@ -309,36 +311,26 @@ void UModularAbilityExtensionComponent::HandleChangeInitState(UGameFrameworkComp
 		{
 			return;
 		}
-		
-		// The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
-		// The ability system component and attribute sets live on the player state.
-		InitializeAbilitySystem(Cast<UModularAbilitySystemComponent>(ModularASC), ModularPS);
-		
+
+		UAbilitySystemComponent* PawnASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Pawn);
+		AActor* PawnRef = PawnASC->GetAvatarActor();
+		if (PawnASC && PawnRef)
+		{
+			/* Prioritize Pawn ASC */
+			InitializeAbilitySystem(Cast<UModularAbilitySystemComponent>(PawnASC), PawnRef);
+		}
+		else
+		{
+			/* The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
+			 * The ability system component and attribute sets live on the player state. */
+			InitializeAbilitySystem(Cast<UModularAbilitySystemComponent>(ModularASC), ModularPS);
+		}
+
 		if (Pawn->InputComponent != nullptr)
 		{
 			InitializePlayerInput(Pawn->InputComponent);
 		}
 	}
-	/* @TODO: 
-	if (CurrentState == ModularGameplayTags::InitState_DataAvailable
-	&& DesiredState == ModularGameplayTags::InitState_DataInitialized)
-	{
-		APawn* Pawn = GetPawn<APawn>();
-		UModularAbilitySystemComponent* ModularASC = GetModularAbilitySystemComponent();
-		if (!ensure(Pawn && ModularASC))
-		{
-			return;
-		}
-		
-		// The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
-		// The ability system component and attribute sets live on the player state.
-		InitializeAbilitySystem(ModularASC, Pawn);
-		
-		if (Pawn->InputComponent != nullptr)
-		{
-			InitializePlayerInput(Pawn->InputComponent);
-		}
-	}*/
 }
 
 void UModularAbilityExtensionComponent::OnActorInitStateChanged(const FActorInitStateChangedParams& Params)

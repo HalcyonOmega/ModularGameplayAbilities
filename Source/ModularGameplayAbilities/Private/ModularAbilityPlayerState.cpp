@@ -2,9 +2,16 @@
 
 #include "ActorComponent/ModularAbilitySystemComponent.h"
 #include "GameplayTagStack.h"
+#include "Components/GameFrameworkComponentManager.h"
+#include "DataAsset/ModularAbilityPawnData.h"
+#include "GameplayAbilities/ModularAbilitySet.h"
 #include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilityPlayerState)
+
+class UModularAbilityPawnData;
+class UModularAbilitySet;
+const FName AModularAbilityPlayerState::NAME_ModularAbilityReady("ModularAbilitiesReady");
 
 AModularAbilityPlayerState::AModularAbilityPlayerState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -29,30 +36,26 @@ void AModularAbilityPlayerState::PostInitializeComponents()
 	check(ModularAbilitySystemComponent);
 	ModularAbilitySystemComponent->InitAbilityActorInfo(this, GetPawn());
 
+	// @Game-Change delete CallOrRegister_OnExperienceLoaded section, logic moved to ACorePlayerState::RegisterToExperienceLoadedToSetPawnData()
 }
 
-void AModularAbilityPlayerState::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+void AModularAbilityPlayerState::SetPawnData(const UModularPawnData* InPawnData)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ThisClass, StatTags);
-}
+	Super::SetPawnData(InPawnData);
+	/* @TODO: Temporarily Commented Out Below - Have Extension Component Handle Ability Set Granting? */
+	/*if (const UModularAbilityPawnData* ModularPawnData = GetPawnData<UModularAbilityPawnData>())
+	{
+		
+		for (const UModularAbilitySet* AbilitySet : ModularPawnData->AbilitySets)
+		{
+			if (AbilitySet)
+			{
+				AbilitySet->GiveToAbilitySystem(ModularAbilitySystemComponent, nullptr);
+			}
+		}
 
-void AModularAbilityPlayerState::AddStatTagStack(FGameplayTag Tag, int32 StackCount)
-{
-	StatTags.AddStack(Tag, StackCount);
-}
+		UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(this, NAME_ModularAbilityReady);
 
-void AModularAbilityPlayerState::RemoveStatTagStack(FGameplayTag Tag, int32 StackCount)
-{
-	StatTags.RemoveStack(Tag, StackCount);
-}
-
-int32 AModularAbilityPlayerState::GetStatTagStackCount(FGameplayTag Tag) const
-{
-	return StatTags.GetStackCount(Tag);
-}
-
-bool AModularAbilityPlayerState::HasStatTag(FGameplayTag Tag) const
-{
-	return StatTags.ContainsTag(Tag);
+		ForceNetUpdate();
+	}*/
 }

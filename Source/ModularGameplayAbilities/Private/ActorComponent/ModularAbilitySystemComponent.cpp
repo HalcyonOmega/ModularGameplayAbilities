@@ -30,11 +30,11 @@ void UModularAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	RegisterDelegates();
+	//RegisterDelegates();
 
 	// Grant startup effects on begin play instead of from within InitAbilityActorInfo to avoid
 	// "ticking" periodic effects when BP is first opened
-	GrantStartupEffects();
+	//GrantStartupEffects();
 }
 
 void UModularAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -163,24 +163,25 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 		{
 			ModularAnimInst->InitializeWithAbilitySystem(this);
 		}
+
 		
 		/* This will happen multiple times for both client/server */
 		OnInitAbilityActorInfo.Broadcast();
 		
-		TryActivateAbilitiesOnSpawn();
+		/* @TODO: Readd if not functional ----- TryActivateAbilitiesOnSpawn(); */
 	}
 }
 
 void UModularAbilitySystemComponent::HandleOnAbilityActivate(UGameplayAbility* Ability)
 {
 	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityActivatedCallback %s"), *Ability->GetName());
-	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
-	 * const AActor* Avatar = GetAvatarActor();
+
+	const AActor* Avatar = GetAvatarActor();
 	if (!Avatar)
 	{
 		UE_LOG(LogModularGameplayAbilities, Error, TEXT("UModularAbilitySystemComponent::OnAbilityActivated No OwnerActor for this ability: %s"), *Ability->GetName());
 		return;
-	} */
+	}
 	
 	OnAbilityActivate.Broadcast(Ability);
 }
@@ -222,13 +223,13 @@ void UModularAbilitySystemComponent::HandleOnAbilityCommit(UGameplayAbility* Act
 void UModularAbilitySystemComponent::HandleOnAbilityEnd(UGameplayAbility* Ability)
 {
 	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback %s"), *Ability->GetName());
-	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
-	 * const AActor* Avatar = GetAvatarActor();
+
+	const AActor* Avatar = GetAvatarActor();
 	if (!Avatar)
 	{
 		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityEndedCallback No OwnerActor for this ability: %s"), *Ability->GetName());
 		return;
-	} */
+	}
 
 	OnAbilityEnd.Broadcast(Ability);
 }
@@ -237,13 +238,13 @@ void UModularAbilitySystemComponent::HandleOnAbilityFail(const UGameplayAbility*
 	const FGameplayTagContainer& Tags)
 {
 	UE_LOG(LogModularGameplayAbilities, Log, TEXT("UModularAbilitySystemComponent::OnAbilityFailedCallback %s"), *Ability->GetName());
-	/* @TODO: What is the value of checking Avatar Actor? What if it's a Player State or Global Ability?
-	 * const AActor* Avatar = GetAvatarActor();
+
+	const AActor* Avatar = GetAvatarActor();
 	if (!Avatar)
 	{
 		UE_LOG(LogModularGameplayAbilities, Warning, TEXT("UModularAbilitySystemComponent::OnAbilityFailed No OwnerActor for this ability: %s Tags: %s"), *Ability->GetName(), *Tags.ToString());
 		return;
-	} */
+	}
 
 	OnAbilityFail.Broadcast(Ability, Tags);
 }
@@ -1088,6 +1089,11 @@ void UModularAbilitySystemComponent::GrantStartupEffects()
 			AddedEffects.Add(EffectHandle);
 		}
 	}
+}
+
+void UModularAbilitySystemComponent::TryActivateAbilitiesOnSpawn_ExposeNative()
+{
+	TryActivateAbilitiesOnSpawn();
 }
 
 const FGameplayTagContainer& UModularAbilitySystemComponent::GetSourceTagsFromContext(

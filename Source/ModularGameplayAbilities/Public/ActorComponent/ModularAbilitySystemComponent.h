@@ -433,6 +433,8 @@ private:
 
 public:
 
+	void TryActivateAbilitiesOnSpawn_ExposeNative();
+	
 	/* Returns the aggregated SourceTags for this EffectSpec. */
 	virtual const FGameplayTagContainer& GetSourceTagsFromContext(const FGameplayEffectModCallbackData& Data);
 
