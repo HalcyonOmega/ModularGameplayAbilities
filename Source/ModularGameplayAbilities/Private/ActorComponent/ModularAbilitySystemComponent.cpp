@@ -29,7 +29,8 @@ UModularAbilitySystemComponent::UModularAbilitySystemComponent(const FObjectInit
 void UModularAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	/* @Change: Block init delegate registration & startup effects */
 	//RegisterDelegates();
 
 	// Grant startup effects on begin play instead of from within InitAbilityActorInfo to avoid
@@ -168,7 +169,8 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 		/* This will happen multiple times for both client/server */
 		OnInitAbilityActorInfo.Broadcast();
 		
-		/* @TODO: Readd if not functional ----- TryActivateAbilitiesOnSpawn(); */
+		/* @Change: Moved to Extension Component for better flow */
+		/* TryActivateAbilitiesOnSpawn(); */
 	}
 }
 
@@ -1093,6 +1095,7 @@ void UModularAbilitySystemComponent::GrantStartupEffects()
 
 void UModularAbilitySystemComponent::TryActivateAbilitiesOnSpawn_ExposeNative()
 {
+	/* @Change: Exposed private function to fix startup flow */
 	TryActivateAbilitiesOnSpawn();
 }
 
